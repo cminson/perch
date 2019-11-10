@@ -1,0 +1,148 @@
+BODY 
+{
+background-color: white;
+margin-top: 0px;
+margin-bottom: 0px;
+margin-right: 0px;
+margin-left: 0px;
+font-size: 10px; 
+color: #25383C;
+color: #3d3d3d;
+font-family:  Tahoma, Verdana, Arial;
+}
+
+
+
+div.opslist {color: white; font-size: 18px; }
+
+div.img { color: gray; font-size: 9px; } 
+div.dp { top-margin: 0px; bottom-margin: 0px; color: gray; font-size: 8px; } 
+input.load { font-size: 10px; }
+input.selection { font-size: 10px; }
+input.convert1 { font-size: 12px; }
+
+
+A.loadfile { color: #3d3d3d; font-size: 20px; font-weight: bold; }
+
+A.nav { color: #3d3d3d; font-size: 10px; font-weight: normal; text-decoration: none}
+A.nav:hover { color: #ff8c00; font-size: 10px; font-weight: normal; text-decoration: none}
+
+A.faq { color: #3d3d3d; font-size: 10px; font-weight: normal; text-decoration: none}
+A.faq:hover { color: #ff8c00; font-size: 10px; font-weight: normal; text-decoration: none}
+
+A.saveimage { color: #3d3d3d; font-size: 14px; font-weight: normal; text-decoration: underline}
+A.saveimage:hover { color: red; font-size: 14px; font-weight: normal; text-decoration: underline}
+a.oplink { color: gray; font-size: 9px; text-decoration: underline}
+A.oplink:hover { color: #ff8c00; font-size: 9px; font-weight: normal; text-decoration: underline}
+
+A.navlink { color: #3d3d3d; font-size: 10px; font-weight: normal; }
+A.newoplink { color: black; font-size: 10px; font-weight: bold; }
+A.navbiglink { color: #3d3d3d; font-size: 14px; font-weight: normal; }
+A{ color: #3d3d3d; font-size: 10px; font-weight: normal; }
+A.mainpagereturnlink { vertical-align: middle; color: #25383C; font-size: 15px; font-weight: bold; margin-top: 15px; margin-bottom: 25px; text-decoration: underlined}
+
+
+table.ops { border-color: gray;  border-spacing: 0px; }
+
+td.opCategory {font-size: 32px; }
+td.opPhone {white-space: nowrap}
+
+td.buttons {vertical-align:top; font-size: 9px; padding: 0px;}
+td.op { height: 12px; padding: 4px; white-space: nowrap; font-size: 10px; }
+caption.ops { color: #25383C; vertial-align: top; font-size: 12px; font-weight: bold }
+td.selection { color: #25383C; font-size: 8px; }
+td.high1 { background-color: #3d3d3d; color: #ff8c00; }
+
+a.mild1red { color: #ff8c00; font-size: 9px; }
+a.mild1 { color: gray; font-size: 9px; }
+span.mild1 { color: gray; font-size: 9px; }
+span.link1 { color: black; font-size: 9px; text-decoration: underline; } 
+span.saveimage { color: black; font-size: 10px; text-decoration: underline; } 
+span.home { display: none; color: gray; font-size: 9px; }
+#mild1 { color: gray; font-size: 9px; }
+P.mild1 { color: gray; font-size: 9px; }
+P.error { color: red; font-size: 9px; }
+
+#ID_MAIN_CONTAINER
+{
+width: 900px; 
+height: 2000px;
+overflow:hidden;
+position:relative;
+}
+
+#ID_MAIN_SLIDER 
+{ 
+position:absolute;
+left:0px;
+width: 1800px;
+-webkit-transition:all 0.5s ease-in-out;
+-moz-transition:all 0.5s ease-in-out;
+-o-transition:all 0.5s ease-in-out;
+-ms-transition:all 0.5s ease-in-out;
+transition:all 0.5s ease-in-out;
+}
+
+div.oparea { height:2000px; width: 900px; float: left; padding: 0; margin: 0; overflow: hidden; }
+
+
+#imagecontainer 
+{
+width: 400px; 
+height:320px;
+overflow:hidden;
+position:relative;
+cursor:crosshair;
+}
+
+#imagesliderNoTransition
+{ 
+position:absolute;
+left:0px;
+width:40000px;
+}
+
+#imageslider 
+{ 
+position:absolute;
+left:0px;
+width:40000px;
+-webkit-transition:all 0.3s ease-in-out;
+-moz-transition:all 0.3s ease-in-out;
+-o-transition:all 0.3s ease-in-out;
+-ms-transition:all 0.3s ease-in-out;
+transition:all 0.3s ease-in-out;
+}
+
+#busydiv
+{
+display: none;
+}
+
+
+#busydivsmall
+{
+display: none;
+width: 60px;
+height: 25px;
+border:0px solid;
+border-color: gray;
+}
+
+#loadarea
+{
+display: none;
+}
+
+div.imagearea { height:320px; width: 400px; float: left; padding: 0; margin: 0; overflow: scroll}
+
+
+table.imagearea { width: 600px; display: block; margin-bottom: 1px}
+
+img.opimagewithborder { border: 3px dotted #ff8c00; height: 300px; margin-top:20px; margin-bottom:20px; }
+img.opimageedit{ border: 3px dotted #ff8c00; height: 800px; margin-top:20px; margin-bottom:20px; }
+
+img.load1 { border: none; height: 100px; width: 100px; margin-top:5px; margin-bottom:3px; }
+img.load2 { border: none; height: 40px; width: 40px; margin-top:5px; margin-bottom:5px; }
+
+

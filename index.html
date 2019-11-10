@@ -1,0 +1,180 @@
+<?php
+$HOME_DIR = "/var/www/perch/index.html";
+$BASE_DIR = "/var/www/perch/";
+$BASE_PATH = "http://54.71.108.91/";
+include "/var/www/perch/common/common.inc";
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+    <title>biscuit:  world's best free online image converter</title>
+
+    <link href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet">
+    <link href=./common/imgareaselect-default.css" rel="stylesheet">
+
+    <script src="./common/jquery-3.3.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="./common/trans.js"></script>
+    <!-- <script src="https://www.christopherminson.com/dev/common/jssocials.min.js"></script> -->
+    <script src="./common/302pop.js"></script>
+
+    <link href="./common/main.css"  type="text/css" rel="stylesheet">
+    <script src="./common/main.js"></script>
+
+</head>
+
+<body style="text-align: center">
+    <div id="home"></div>
+
+<div style="display: none" id="ID_HELP_AREA">
+
+    <div style="position: fixed; top: 20px; right: 0px; width: 90px">
+    <img onclick="toggleHelpPage()" id="ID_CONTENT_IMAGE" height="50" src="./resources/navs/questionmark01.png" alt="">
+    <p>
+    </div>
+    <h1>DreemPerch Help</h1>
+</div> <!-- END ID_HELP_AREA -->
+
+<div style="display: inline-block" id="ID_CONTENT_AREA">
+
+    <!-- Home Button.  Takes user to last loaded image -->
+    <div style="position: fixed; top: 20px; left: 20px; width: 90px">
+    <img onclick="homeImage()" id="ID_HOME_IMAGE" height="50" src="./resources/utils/trans.gif" alt="">
+    <p>
+    </div>
+    <div style="position: fixed; top: 20px; right: 0px; width: 90px">
+    <img onclick="toggleHelpPage()" id="ID_HELP_IMAGE" height="50" src="./resources/navs/questionmark01.png" alt="">
+    <p>
+    </div>
+
+
+    <!-- hidden image load area - used by all op post calls -->
+    <iframe  name="upload_target" src="#" style="width:0;height:0px;border:1px solid #fff; display: none">
+    </iframe>
+
+    <!-- hidden submit form -->
+    <form enctype="multipart/form-data" id="ID_LOAD_FORM" action="./ops/loadx.php" method="post" target="upload_target">
+
+        <input type="hidden" name="MAX_FILE_SIZE" value="8000000">
+        <div style="height:0px;overflow:hidden">
+        <input onchange="submitFile();" size="90" type="FILE" id="ID_SUBMIT_FILE" name="FILENAME">
+        </div>
+    </form>
+
+    <!-- START IMAGE AREA  -->
+    <br>
+    <span style="vertical-align:middle; text-align: center; height: 14px; padding: 0px; white-space: nowrap; color: black; font-weight: normal; font-size: 12px;" id="ID_IMAGE_STATS">SPAN HERE </span>
+    <p>
+    <img style="display: inline-block; border: none; height: 290px; margin-top:0px; margin-bottom:0px; cursor: crosshair" src="./resources/banners/banner01.jpg" alt="" id="ID_MAIN_IMAGE" onclick="getImageColorAtCurrentPoint(event)">
+    <!-- END IMAGE AREA  -->
+
+
+<br>
+
+<!-- Share Button area [TBD] -->
+<div id="ID_SHARE_CONTAINER"></div>
+
+
+<!-- START NAV BUTTONS -->
+<table style="display: inline-block; margin-bottom: 1px; margin-top: 0px">
+    <tr>
+    <td>
+        <img onclick="previousImage()" width="40" src="./resources/navs/nleft.jpg" alt="">
+    </td>
+    <td>
+        <a href="#home" onclick="chooseFile()">
+        <img style="border:0" width="60" src="./resources/navs/arrow-up.jpg" alt=""></a>
+    </td>
+    <td.>
+        <a href="./christopherminson19007449161000.jpg" id="ID_DOWNLOAD_IMAGE" download="biscuit"><img style="border: 0" width="60" src="./resources/navs/arrow-down.jpg" alt=""> </a>
+
+    </td>
+    <td>
+        <img onclick="nextImage()" width="40" src="./resources/navs/nright.jpg" alt="">
+    </td>
+    </tr>
+</table>
+<!-- END LOAD BUTTONS -->
+
+
+<br><img width="750" height="1" src="./resources/utils/whitepixel.jpg" alt="">
+
+<div style="text-align: center; display: none" id="ID_RETURN_TO_MAINPAGE">
+<a class="mainpagereturnlink" HREF="#home" onclick=returnToMainArea()>Return To Main Page</a>
+</div>
+
+<!-- START MAINCONTAINER  -->
+<!--
+Main container contains:
+    1) Hidden load area
+    2) A main slider - which contains:
+    a) An ops toc area
+    b) An ops form are
+-->
+<div style="display: inline-block; margin-top: 0px" id="ID_MAIN_CONTAINER">
+
+<!-- START Main Slider -->
+<div style="display: inline-block; margin-top: 0px" id="ID_MAIN_SLIDER">	
+
+
+<!-- START OP TOC -->
+<div class="oparea"> 
+<table style="display: inline-block; border-collapse: separate; border-spacing: 20px;">
+<tr>
+
+<td style="vertical-align: top; text-align: center">
+<?php
+include $BASE_DIR."/ops/opcol1.php";
+?>
+
+</td>
+
+
+<td style="vertical-align: top; text-align: center">
+<?php
+include $BASE_DIR."/ops/opcol2.php"; 
+?>
+</td>
+
+<td style="vertical-align: top; text-align: center">
+<?php
+include $BASE_DIR."/ops/opcol3.php"; 
+?>
+</td>
+
+</tr>
+</table>
+
+<p><br>
+<p><br>
+<p><br><p><br><p>
+<P class="mild1"> &#169; 2020  christopher minson llc 
+<p><br><p><br><p>
+
+
+</div>
+<!-- END OP TOC -->
+
+<!-- START OP AREA -->
+<div class="oparea" id="ID_OP_FORM"></div>
+<!-- END OP AREA -->
+
+
+</div>	<!-- END MAIN SLIDER -->
+</div>	<!-- END MAIN DIV -->
+
+<!--
+This is where images are stored for hit testing
+Used by Transparency
+-->
+<canvas id="ID_HIDDEN_IMAGE" width="1000" height="1000" style="display:none"></canvas>
+
+
+</div> <!-- END ID_CONTENT_AREA -->
+
+</body>
+</html>

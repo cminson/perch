@@ -1,0 +1,2 @@
+#convert -background white -crop $new_real_width"."x".$new_real_height."+$clientX1+$clientY1 +repage $inputFileDir $outputFileDir
+convert -background white -crop 900x570+0+0  +repage abstract.jpg abstract01.jpg
