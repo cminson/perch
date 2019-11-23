@@ -1,2 +1,2 @@
-rm -f /var/www/christopherminson/dev/CONVERSIONS/*
-rm -f /var/www/christopherminson/dev/TMP/*
+rm -f ./CONVERSIONS/*
+rm -f ./TMP/*

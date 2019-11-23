@@ -34,17 +34,16 @@ $PNGSUFFIX = ".png";
 $GIFSUFFIX = ".gif";
 $JPGSUFFIX = ".jpg";
 $BMPSUFFIX = ".bmp";
-$TIFFSUFFIX = ".tif";
-$ICOSUFFIX = ".ico";
+$BADSUFFIX = ".BAD";
 
 /////////////////////////////////////////////////////////////////////
 //Image formats we support in general
-$VALID_IMAGE_FORMATS = array("JPG", "GIF", "PNG", "BMP", "ICO", "TIF", "TIFF");
+$VALID_IMAGE_FORMATS = array("JPG", "GIF", "PNG", "BMP");
 $VALID_CONV_FORMATS = array("JPG", "GIF", "PNG", "BMP");
-$VIF_STRING = "JPG, GIF,  PNG, BMP, TIF, ICO";
+$VIF_STRING = "JPG, GIF,  PNG, BMP";
 
 //Image formats that you can usually view on an HTML page
-$HTML_IMAGE_FORMATS = array("JPG", "GIF",  "ICO", "PNG", "BMP", "PDB", "TIF", "TIFF");
+$HTML_IMAGE_FORMATS = array("JPG", "GIF", "PNG", "BMP");
 
 //////////////////////////////////////////////////////////////////////
 //Global Error Messages
@@ -77,8 +76,8 @@ $MAX_ANIM_FRAME_SIZE = 3000000;  // max size for animation frame file
 $RESIZE_MAX_WIDTH = 800;  // Resize target width when resizing overly large files
 $RESIZE_MAX_HEIGHT= 800;  // Resize target height when resizing overly large files
 
-$RANDOM_NAME_MIN = 1000000000;  // min bound number for random image names
-$RANDOM_NAME_MAX = 9999999999;  // max bound number for random image names
+$RANDOM_NAME_MIN = 100000;  // min bound number for random image names
+$RANDOM_NAME_MAX = 999999;  // max bound number for random image names
 
 
 $current = getGETVar('CURRENTFILE');
@@ -275,6 +274,60 @@ function StripSuffix($name)
 		return $name;
 	$newName = str_replace("$suffix", "", $name); 
 	return $newName;
+}
+
+function GetImageFormatSuffix($inputFileDir)
+{
+    global $JPGSUFFIX, $GIFSUFFIX, $PNGSUFFIX, $BMPSUFFIX, $BADSUFFIX;
+
+    $command = "identify $inputFileDir";
+    $execResult = exec("$icommand 2>&1", $lines, $ConvertResultCode);
+    $imageType = explode($execResult," ")[1];
+
+    switch ($imageType) {
+    case "JPEG":
+        $suffix = $JPGSUFFIX;
+        break;
+    case "JPG":
+        $suffix = $JPGSUFFIX;
+        break;
+    case "GIF":
+        $suffix = $GIFSUFFIX;
+        break;
+    case "PNG":
+        $suffix = $PNGSUFFIX;
+        break;
+    case "BMP":
+        $suffix = $BMPSUFFIX;
+        break;
+    default:
+        $suffix = $BADSUFFIX;
+    };
+
+    return $suffix;
+}
+
+function GenerateSessionImageName()
+{
+    global $RANDOM_NAME_MIN, $RANDOM_NAME_MAX;
+
+	$session = rand($RANDOM_NAME_MIN, $RANDOM_NAME_MAX);
+    $newName = "$session.00.JPG";
+    return $newName;
+}
+
+function GenerateImageName($name)
+{
+    $terms = explode('.',$name);
+    $termCount = count($terms);
+
+    $suffix = $terms[$termCount - 1];
+    $index = intval($terms[$termCount - 2]);
+    $session = $terms[$termCount - 3];
+
+    $index += 1;
+    $newName = $session.".".$index.".".$suffix;
+    return $newName;
 }
 
 

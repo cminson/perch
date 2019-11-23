@@ -143,6 +143,7 @@ function chooseFile()
 {
     var e;
 
+    console.log('chooseFile');
 	e  = document.getElementById('ID_SUBMIT_FILE');
 	if (e == null)
 	{
@@ -158,6 +159,7 @@ function chooseFile()
 
     // make sure we're at top of page
     window.location.href = "#home";
+    console.log('e click');
 	e.click();
 }
 
@@ -650,9 +652,9 @@ function completeWithNoAction()
 }
 
 
-function completeImageLoad(image,text)
+function completeImageLoad(image,text,segmentInfo)
 {
-    console.log("completeImageLoad: ", image, text);
+    console.log("completeImageLoad: ", image, text, segmentInfo);
 	enableConvertButton();
 
 	if (BusyDisplayed == 0)
@@ -663,6 +665,8 @@ function completeImageLoad(image,text)
 	//show('imagearea');
 	show('ID_MAIN_SLIDER');
 
+
+
 	//var relImage = image.replace(WEB_ROOT,".");
 	var relImage = image.replace(WEB_ROOT,"");
 
@@ -671,6 +675,8 @@ function completeImageLoad(image,text)
 	addImage(image,text);
 
 	setHomeImage(image,CurrentPosition);
+
+    document.getElementById('ID_OBJECT_VALUES').innerHTML = segmentInfo;
 }
 
 
