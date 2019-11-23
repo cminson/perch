@@ -17,7 +17,7 @@ $inputFileDir = $_POST['CURRENTFILE'];
 $inputFileDir = "$BASE_DIR$inputFileDir";
 $inputFileName = basename($inputFileDir);
 
-$targetName = NewNameGIF();
+$targetName = NewImageName($inputFileDir);
 $outputFileDir = GetConversionDir($targetName);
 $outputFilePath = GetConversionPath($targetName);
 

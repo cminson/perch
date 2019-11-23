@@ -30,45 +30,6 @@ $HEIGHT_IMAGE = 290;   //styled height of all displayed images
 
 putenv("LD_LIBRARY_PATH=/usr/local/lib");
 
-$PNGSUFFIX = ".png";
-$GIFSUFFIX = ".gif";
-$JPGSUFFIX = ".jpg";
-$BMPSUFFIX = ".bmp";
-$BADSUFFIX = ".BAD";
-
-/////////////////////////////////////////////////////////////////////
-//Image formats we support in general
-$VALID_IMAGE_FORMATS = array("JPG", "GIF", "PNG", "BMP");
-$VALID_CONV_FORMATS = array("JPG", "GIF", "PNG", "BMP");
-$VIF_STRING = "JPG, GIF,  PNG, BMP";
-
-//Image formats that you can usually view on an HTML page
-$HTML_IMAGE_FORMATS = array("JPG", "GIF", "PNG", "BMP");
-
-//////////////////////////////////////////////////////////////////////
-//Global Error Messages
-$MSG_ERRORBADFORMAT = "ERROR: This file is corrupted or has a bad format";
-
-$MSG_ERRORNOFILE = "ERROR: No file entered.  Enter a correct file name in the form below and then click the Load button";
-
-$MSG_ERRORMAXFILESIZE = "ERROR: Not a valid file.<BR>The file is either too large (2.0M limit) or does not exist.";
-
-$MSG_ERRORUPLOAD = "ERROR: Could not locate this file.<BR>Please check the file name and try again.";
-
-$MSG_ERRORMAXFILESIZE = "ERROR: Not a valid file.<BR>The file is either too large (3.0M limit) or does not exist.";
-
-$MSG_ERRORCONVERT = "ERROR: File would not convert.<BR>Please check the file and try again.";
-
-$MSG_ERRORWRONGTYPE = "ERROR: Not a valid file type.<BR>Your file  must be in graphics format, having a correct suffix at the end of the file name.";
-
-$MSG_ERRORINVALIDIMAGE = "ERROR: Not a valid image type.<BR>Your file  must be in  one of these supported formats:  $VIF_STRING.";
-
-$MSG_ERRORNOPSD = "ERROR: This is a PSD formatted file.<BR>Your file  must be in  one of these supported formats:  $VIF_STRING.";
-
-$MSG_SUCCESSCONVERT = "";
-
-$MSG_SUCCESSTEXTCONVERT = "Your converted file is below.  <BR>Windows Users: Right-click the link to save it to your hard disk. <BR>Mac Users: Control-click the link to save it to your hard disk.";
-
 
 $MAX_FILE_SIZE = 10000000;   // 10M. Max image file size. Also set in php.ini (upload_max_filesize)
 $MAX_FILE_SIZE_PRINTABLE = "3.0Mb";  //For output in help messages
@@ -88,184 +49,6 @@ $current = getGETVar('CURRENTFILE');
 ////////////////////////////////////////////////////
 
 
-function MakeRandom()
-{
-global $RANDOM_NAME_MIN;
-global $RANDOM_NAME_MAX;
-
-	$rand = rand($RANDOM_NAME_MIN, $RANDOM_NAME_MAX);
-	return $rand;
-}
-
-
-function IsGoodImage($targetFileDir)
-{
-
-    $command = "identify $targetFileDir";
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-    if ((stristr($lines[0], "Improper") != FALSE))
-        return FALSE;
-    if ((stristr($lines[0], "Corrupt") != FALSE))
-        return FALSE;
-    if ((stristr($lines[0], "Bad") != FALSE))
-        return FALSE;
-    if ((stristr($lines[0], "Unable") != FALSE))
-        return FALSE;
-    if ((stristr($lines[0], "found") != FALSE))
-        return FALSE;
-    if ((stristr($lines[0], "starts") != FALSE))
-        return FALSE;
-	return TRUE;
-}
-
-function IsValidImageFormat($name)
-{
-	global $VALID_IMAGE_FORMATS;
-
-	$len = strlen($name);
-	if ($len <= 4)
-		return FALSE;
-	$suffix = strrchr($name, ".");
-	if ($suffix == FALSE)
-		return FALSE;
-	$arr = array("1", "2", "3");
-	foreach ($VALID_IMAGE_FORMATS as $format)
-	{
-		if (strcasecmp($suffix, ".$format") == 0)
-			return TRUE;
-	}	
-	return FALSE;
-}
-
-
-function CorrectFormat($suffix)
-{
-	global $VALID_CONV_FORMATS;
-	global $VALID_IMAGE_FORMATS;
-	global $JPGSUFFIX;
-
-	if (strlen($suffix) < 1)
-	{
-		//return $JPGSUFFIX;
-		return $suffix;
-	}
-	if (strlen($suffix) > 10)
-		return $JPGSUFFIX;
-	foreach ($VALID_IMAGE_FORMATS as $format)
-	{
-		if (strcasecmp($suffix, ".$format") == 0)
-			return $suffix;
-	}	
-	return $JPGSUFFIX;
-}
-
-
-
-function IsValidBMP($name)
-{
-    $len = strlen($name);
-    if ($len <= 4)
-        return FALSE;
-    $suffix = strrchr($name, ".");
-    if ($suffix == FALSE)
-		return FALSE;
-    if (strcasecmp($suffix, ".bmp") == 0)
-        return TRUE;
-    return FALSE;
-}
-
-
-function IsValidGIF($name)
-{
-    $len = strlen($name);
-    if ($len <= 4)
-        return FALSE;
-    $suffix = strrchr($name, ".");
-    if ($suffix == FALSE)
-		return FALSE;
-    if (strcasecmp($suffix, ".gif") == 0)
-        return TRUE;
-    return FALSE;
-}
-
-
-function IsValidJPG($name)
-{
-    $len = strlen($name);
-    if ($len <= 4)
-        return FALSE;
-    $suffix = strrchr($name, ".");
-    if ($suffix == FALSE)
-		return FALSE;
-    if (strcasecmp($suffix, ".jpg") == 0)
-        return TRUE;
-    return FALSE;
-}
-
-
-
-function IsValidTIF($name)
-{
-    $len = strlen($name);
-    if ($len <= 4)
-        return FALSE;
-    $suffix = strrchr($name, ".");
-    if ($suffix == FALSE)
-		return FALSE;
-    if (strcasecmp($suffix, ".tif") == 0)
-        return TRUE;
-    if (strcasecmp($suffix, ".tiff") == 0)
-        return TRUE;
-    if (strcasecmp($suffix, ".ico") == 0)
-        return TRUE;
-    return FALSE;
-}
-
-
-
-function IsValidPNG($name)
-{
-    $len = strlen($name);
-    if ($len <= 4)
-        return FALSE;
-    $suffix = strrchr($name, ".");
-    if ($suffix == FALSE)
-		return FALSE;
-    if (strcasecmp($suffix, ".png") == 0)
-        return TRUE;
-    return FALSE;
-}
-
-
-
-function IsHTMLImageFormat($name)
-{
-	global $HTML_IMAGE_FORMATS;
-	global $BASE_DIR;
-
-
-	$len = strlen($name);
-	if ($len <= 4)
-		return FALSE;
-	$suffix = strrchr($name, ".");
-	if ($suffix == FALSE)
-		return FALSE;
-	foreach($HTML_IMAGE_FORMATS as $format)
-	{
-		if (strcasecmp($suffix, ".$format") == 0)
-			return TRUE;
-	}	
-	return FALSE;
-}
-
-
-function GetSuffix($name)
-{
-	$suffix = strrchr($name, ".");
-	return $suffix;
-}
-
-
 function StripSuffix($name)
 {
 	$len = strlen($name);
@@ -276,173 +59,36 @@ function StripSuffix($name)
 	return $newName;
 }
 
-function GetImageFormatSuffix($inputFileDir)
+function NewBaseImageName()
 {
-    global $JPGSUFFIX, $GIFSUFFIX, $PNGSUFFIX, $BMPSUFFIX, $BADSUFFIX;
-
-    $command = "identify $inputFileDir";
-    $execResult = exec("$icommand 2>&1", $lines, $ConvertResultCode);
-    $imageType = explode($execResult," ")[1];
-
-    switch ($imageType) {
-    case "JPEG":
-        $suffix = $JPGSUFFIX;
-        break;
-    case "JPG":
-        $suffix = $JPGSUFFIX;
-        break;
-    case "GIF":
-        $suffix = $GIFSUFFIX;
-        break;
-    case "PNG":
-        $suffix = $PNGSUFFIX;
-        break;
-    case "BMP":
-        $suffix = $BMPSUFFIX;
-        break;
-    default:
-        $suffix = $BADSUFFIX;
-    };
-
-    return $suffix;
-}
-
-function GenerateSessionImageName()
-{
-    global $RANDOM_NAME_MIN, $RANDOM_NAME_MAX;
-
-	$session = rand($RANDOM_NAME_MIN, $RANDOM_NAME_MAX);
-    $newName = "$session.00.JPG";
+    $session = time() % 1000000;
+    $newName = "$session.000.jpg";
     return $newName;
 }
 
-function GenerateImageName($name)
+function NewImageName($name)
 {
     $terms = explode('.',$name);
     $termCount = count($terms);
 
-    $suffix = $terms[$termCount - 1];
     $index = intval($terms[$termCount - 2]);
     $session = $terms[$termCount - 3];
 
     $index += 1;
-    $newName = $session.".".$index.".".$suffix;
+    $index_string = str_pad("$index", 3, "0", STR_PAD_LEFT);
+    $newName = $session.".".$index_string.".jpg";
     return $newName;
 }
 
-
-function NewName($inputFileDir)
+function NewTMPImageName($name)
 {
-
-	$rand = MakeRandom();
-
-	$name = basename($inputFileDir);
-    $suffix = strrchr($name, ".");
-
-    $suffix = CorrectFormat($suffix);
-    $suffix = strtolower($suffix);
-    $newName = "$rand$suffix";
-
-	return $newName;
-}
-
-function NewTMPName($inputFileDir)
-{
-
-    $rand = MakeRandom();
-
-    $name = basename($inputFileDir);
-    $suffix = strrchr($name, ".");
-
-    $suffix = CorrectFormat($suffix);
-    $suffix = strtolower($suffix);
-    $newName = "$rand$suffix";
-
+    return 'x'.NewImageName($name);
     return $newName;
 }
 
-
-function NewNameGIF()
+function NewMaskImageName($name)
 {
-global $GIFSUFFIX;
-
-	$rand = MakeRandom();
-    $newName = "$rand$GIFSUFFIX";
-	return $newName;
-}
-
-
-function NewNamePNG()
-{
-global $PNGSUFFIX;
-
-	$rand = MakeRandom();
-    $newName = "$rand$PNGSUFFIX";
-	return $newName;
-}
-
-
-function NewNameJPG()
-{
-global $JPGSUFFIX;
-
-	$rand = MakeRandom();
-    $newName = "$rand$JPGSUFFIX";
-	return $newName;
-}
-
-function NewNameBMP()
-{
-global $BMPSUFFIX;
-
-	$rand = MakeRandom();
-    $newName = "$rand$BMPSUFFIX";
-	return $newName;
-}
-
-
-function MakeRandomTextName($path, $name, $rand)
-{
-
-	$suffix = strrchr($name, ".");
-	$suffix = CorrectFormat($suffix);
-	$suffix = strtolower($suffix);
-	$newName = "$path$rand$suffix";
-
-	return $newName;
-}
-
-function MakeTMPRandomTextName($path, $name, $rand)
-{
-
-
-	$suffix = strrchr($name, ".");
-	$suffix = CorrectFormat($suffix);
-	$suffix = strtolower($suffix);
-	$newName = "$path$rand$suffix";
-
-	return $newName;
-}
-
-
-function IsHandHeld()
-{
-	$ua = $_SERVER['HTTP_USER_AGENT'];
-	//RecordCommand("IsHandHeld: $ua");
-    if ((stristr($ua, "phone") != FALSE))
-	{
-		//RecordCommand("IsHandHeld: TRUE");
-		return TRUE;
-	}
-    if ((stristr($ua, "Pad") != FALSE))
-	{
-		return TRUE;
-	}
-    if ((stristr($ua, "android") != FALSE))
-	{
-		return TRUE;
-	}
-	return FALSE;
+    return 'm'.NewImageName($name);
 }
 
 
@@ -467,7 +113,6 @@ function RecordCommand($command)
 		fclose($fp);
 	}
 }
-
 
 
 function PrintSaveImageString()

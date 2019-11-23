@@ -31,7 +31,7 @@ break;
 RecordCommand("$inputFileDir $Arg");
 
 
-$targetName = NewName($inputFileDir);
+$targetName = NewImageName($inputFileDir);
 $outputFileName = $targetName;
 $outputFileDir = GetConversionDir($outputFileName);
 $outputFilePath = GetConversionPath($outputFileName);
@@ -85,28 +85,28 @@ case 'history':
     GetImageAttributes($inputFileDir,$width,$height,$size);
     $textureImageDir = "$TEXTURE_DIR"."oldpaper1.gif";
 
-    $targetName = TMPName($inputFileDir);
+    $targetName = NewTMPImageName($inputFileDir);
     $outputFileDir = "$CONVERT_DIR$targetName";
     $command = "convert  -resize $width"."x$height!"." $textureImageDir $outputFileDir";
 	RecordCommand($command);
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
     $textureImageDir = $outputFileDir;
 
-    $targetName = TMPName($inputFileDir);
+    $targetName = NewTMPImageName($inputFileDir);
     $outputFileDir = "$CONVERT_DIR$targetName";
     $command = "composite -dissolve 50% $inputFileDir $textureImageDir $outputFileDir";
 	RecordCommand($command);
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
     $inputFileDir = $outputFileDir;
 
-    $targetName = TMPName($inputFileDir);
+    $targetName = NewTMPImageName($inputFileDir);
     $outputFileDir = "$CONVERT_DIR$targetName";
     $command = "composite  $inputFileDir $textureImageDir -compose bumpmap -gravity center $outputFileDir";
 	RecordCommand($command);
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
     $inputFileDir = $outputFileDir;
 
-    $targetName = NewName($inputFileDir);
+    $targetName = NewTMPImageName($inputFileDir);
     $outputFileDir = "$CONVERT_DIR$targetName";
     $outputFilePath = "$CONVERT_PATH$targetName";
 	RecordCommand($command);
@@ -118,19 +118,19 @@ case 'oldpaper':
     GetImageAttributes($inputFileDir,$width,$height,$size);
     $textureImageDir = "$TEXTURE_DIR"."oldpaper1.gif";
 
-    $targetName = TMPName($inputFileDir);
+    $targetName = NewTMPImageName($inputFileDir);
     $outputFileDir = "$CONVERT_DIR$targetName";
     $command = "convert  -resize $width"."x$height!"." $textureImageDir $outputFileDir";
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
     $textureImageDir = $outputFileDir;
 
-    $targetName = NewName($inputFileDir);
+    $targetName = NewTMPImageName($inputFileDir);
     $outputFileDir = "$CONVERT_DIR$targetName";
     $command = "composite -dissolve 50% $inputFileDir $textureImageDir $outputFileDir";
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
     $inputFileDir = $outputFileDir;
 
-    $targetName = NewName($inputFileDir);
+    $targetName = NewTMPImageName($inputFileDir);
     $outputFileDir = "$CONVERT_DIR$targetName";
     $outputFilePath = "$CONVERT_PATH$targetName";
     $command = "composite  $inputFileDir $textureImageDir -compose bumpmap -gravity center $outputFileDir";
@@ -141,7 +141,7 @@ case 'ice':
     GetImageAttributes($inputFileDir,$width,$height,$size);
     $textureImageDir = "$TEXTURE_DIR"."paper10.gif";
 
-    $outputFileName = TMPName($inputFileDir);
+    $outputFileName = NewTMPImageName($inputFileDir);
     $outputFileDir = "$CONVERT_DIR$outputFileName";
     $command = "convert $textureImageDir -colorspace gray  -normalize -fill gray50 -colorize 70% $outputFileDir";
     // $command = "convert $textureImageDir colorize 70% -colorspace gray  -normalize -fill gray50 $outputFileDir";
@@ -149,7 +149,7 @@ case 'ice':
     $textureImageDir = $outputFileDir;
 	RecordCommand("TEXTURE $command");
 
-    $outputFileName = NewName($inputFileDir);
+    $outputFileName = NewTMPImageName($inputFileDir);
     $outputFileDir = "$CONVERT_DIR$outputFileName";
     $outputFilePath = "$CONVERT_PATH$outputFileName";
     $command = "composite -tile $textureImageDir -dissolve 30% $inputFileDir $outputFileDir";
@@ -157,7 +157,7 @@ case 'ice':
 	RecordCommand("TEXTURE $command");
 
     $inputFileDir = $outputFileDir;
-    $outputFileName = NewName($inputFileDir);
+    $outputFileName = NewTMPImageName($inputFileDir);
     $outputFileDir = "$CONVERT_DIR$outputFileName";
     $outputFilePath = "$CONVERT_PATH$outputFileName";
     $command = "convert -blur 1x5 -shade 20x121.78 -normalize -emboss 4 -tint 90 -fill blue $inputFileDir $outputFileDir";
