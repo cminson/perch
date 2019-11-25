@@ -12,7 +12,7 @@ RecordCommand("Bend $Arg");
 $inputFileDir = $_POST['CURRENTFILE'];
 $inputFileDir = "$BASE_DIR$inputFileDir";
 
-$targetName = NewName($inputFileDir);
+$targetName = NewImageName($inputFileDir);
 $outputFileDir = GetConversionDir($targetName);
 $outputFilePath = GetConversionPath($targetName);
 
@@ -27,14 +27,15 @@ case 'EXPLODE':
     $setting = $Setting * -0.5;
 	$command = "convert -virtual-pixel Background -implode $setting  -background white +repage $inputFileDir $outputFileDir";
 	$command = "convert  -implode $setting $inputFileDir $outputFileDir";
+    /*
 	$command = "convert  -region 150x150+0+0 -implode $setting $inputFileDir $outputFileDir";
 	$command = "convert -region 150x150+0+0 -virtual-pixel Background -implode $setting  -background white +repage $inputFileDir $outputFileDir";
-	//$command = "convert  -resize 400%  -implode $setting -resize 25% $inputFileDir $outputFileDir";
+     */
     $LastOperation = "$LastOperation Exploded $Setting";
     break;
 case 'IMPLODE':
     $setting = $Setting * 0.5;
-	$command = "convert -region 150x150+0+0 -virtual-pixel Background -implode $setting  -background white +repage $inputFileDir $outputFileDir";
+	$command = "convert -virtual-pixel Background -implode $setting  -background white +repage $inputFileDir $outputFileDir";
     break;
 case 'FRACTALIZE':
     $spread = $Setting;

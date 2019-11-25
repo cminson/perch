@@ -1,0 +1,13 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8">
+<?php
+include './common/common.inc';
+
+$current = $_GET['CURRENTFILE'];
+$current = rawurldecode($current);
+RecordCommand("DISPLAYIMAGE: $current");
+$href = "$BASE_PATH$current";
+print "<meta http-equiv=\"refresh\" content=\"1;url=$href\">\n";
+?>

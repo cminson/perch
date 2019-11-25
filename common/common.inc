@@ -1,11 +1,9 @@
 <?php
-$RecordCommandOn=TRUE;
-
+$BASE_PATH = "http://54.71.108.91"; // also set in main.js
 
 // global env for php and javascript
 $HOME_DIR = "/var/www/perh/index.html";
 $BASE_DIR = "/var/www/perch";
-$BASE_PATH = "http://54.71.108.91";
 $CONVERSION_PATH = "$BASE_PATH"."/CONVERSIONS/";
 $CONVERSION_DIR = "$BASE_DIR"."/CONVERSIONS/";
 
@@ -32,16 +30,12 @@ putenv("LD_LIBRARY_PATH=/usr/local/lib");
 
 
 $MAX_FILE_SIZE = 10000000;   // 10M. Max image file size. Also set in php.ini (upload_max_filesize)
-$MAX_FILE_SIZE_PRINTABLE = "3.0Mb";  //For output in help messages
-$MAX_ANIM_FRAME_SIZE = 3000000;  // max size for animation frame file 
+$MAX_FILE_SIZE_PRINTABLE = "10.0Mb";  //For output in help messages
 $RESIZE_MAX_WIDTH = 800;  // Resize target width when resizing overly large files
 $RESIZE_MAX_HEIGHT= 800;  // Resize target height when resizing overly large files
 
-$RANDOM_NAME_MIN = 100000;  // min bound number for random image names
-$RANDOM_NAME_MAX = 999999;  // max bound number for random image names
-
-
 $current = getGETVar('CURRENTFILE');
+$RecordCommandOn=TRUE;
 
 
 /////////////////////////////////////////////////////
@@ -74,10 +68,15 @@ function NewImageName($name)
     $index = intval($terms[$termCount - 2]);
     $session = $terms[$termCount - 3];
 
-    $index += 1;
-    $index_string = str_pad("$index", 3, "0", STR_PAD_LEFT);
-    $newName = $session.".".$index_string.".jpg";
-    return $newName;
+    // find an unallocated file name for this session
+    while (True) 
+    {
+        $index += 1;
+        $index_string = str_pad("$index", 3, "0", STR_PAD_LEFT);
+        $newName = $session.".".$index_string.".jpg";
+        $newNameDir = "$BASE_DIR$newName";
+        if (file_exists($newNameDir) == False) return $newName;
+    }
 }
 
 function NewTMPImageName($name)
@@ -112,6 +111,26 @@ function RecordCommand($command)
 		fputs($fp, "\n");
 		fclose($fp);
 	}
+}
+
+function ConvertToJPG($inputFileDir)
+{
+global $CONVERT_DIR;
+global $JPGSUFFIX;
+
+    $targetName = NewImageName($inputFileDir);
+    $outputFileDir = "$CONVERT_DIR$targetName";
+    $command = "convert $inputFileDir $outputFileDir";
+    //RecordCommand("DEV ConvertToJPG $command");
+    //
+    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+    if (file_exists($outputFileDir) == FALSE)
+    {
+        $targetName = StripSuffix($targetName);
+        $outputFileDir = "$CONVERT_DIR$targetName-0$JPGSUFFIX";
+        //RecordCommand("ConvertToJPG ANIM SEEN $outputFileDir");
+    }
+    return $outputFileDir;
 }
 
 
@@ -488,7 +507,7 @@ function ResizeImage($imageDir, $width, $height, $exactFit)
 {
 
     //RecordCommand("XRESIZE");
-    $targetName = NewName($imageDir);
+    $targetName = NewImageName($imageDir);
     $outputFileDir = GetConversionDir($targetName);
     if ($exactFit == TRUE)
         $command = "convert -resize $width"."x"."$height"."\!"." $imageDir $outputFileDir";
@@ -518,77 +537,6 @@ function ResizeTMPImage($imageDir, $width, $height, $exactFit)
 }
 
 
-
-function ConvertToJPG($inputFileDir)
-{
-global $JPGSUFFIX;
-
-	$targetName = NewNameJPG();
-    $outputFileDir = GetConversionDir($targetName);
-    $command = "convert $inputFileDir $outputFileDir";
-
-	RecordCommand("ConvertToJPG $command");
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-	if (file_exists($outputFileDir) == FALSE)
-	{
-		$targetName = StripSuffix($targetName);
-		$outputFileDir = GetConversionDir("$targetName-0$JPGSUFFIX");
-		RecordCommand("ConvertToJPG ANIM SEEN $outputFileDir");
-	}
-    return $outputFileDir;
-}
-
-
-function ConvertToGIF($imageDir)
-{
-
-	$targetName = NewNameGIF();
-    $outputFileDir = GetConversionDir($targetName);
-    $command = "convert $imageDir $outputFileDir";
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-    return $outputFileDir;
-}
-
-
-
-function ConvertToPNG($imageDir)
-{
-global $PNGSUFFIX;
-
-	$targetName = NewNamePNG();
-    $outputFileDir = GetConversionDir($targetName);
-    $command = "convert $imageDir $outputFileDir";
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-    return $outputFileDir;
-}
-
-
-
-//
-// Convert a tif to a jpg
-// CJM DEV - note special case link to /usr/bin
-// this is due to lack of tiff delegate in runtime convert
-//
-function ConvertTIF($imageDir)
-{
-global $JPGSUFFIX;
-
-    $targetName = NewNameJPG();
-    $outputFileDir = GetConversionDir($targetName);
-    $command = "/usr/bin/convert $imageDir $outputFileDir"; // CJM NOTE
-	RecordCommand("ConvertTIF $command");
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-	if (file_exists($outputFileDir) == FALSE)
-	{
-		$baseName = basename($outputFileDir);
-        $outputFileDir = GetConversionDir("$baseName-0$JPGSUFFIX");
-		//RecordCommand("ConvertToJPG ANIM SEEN $outputFileDir");
-	}
-    return $outputFileDir;
-}
-
-
-
 function GetAnimatedImages($animatedFile)
 {
 global $PNGSUFFIX;
@@ -612,44 +560,6 @@ global $GIFGSUFFIX;
         $imageList[] = $imageFileDir;
     }
     return $imageList;
-}
-
-
-function TMPName($name)
-{
-
-$rand = rand(1000000000,9999999999);
-$suffix = GetSuffix($name);
-$suffix = CorrectFormat($suffix);
-$newname = "CJM-$rand$suffix";
-return $newname;
-}
-
-function TMPGIF()
-{
-global $GIFSUFFIX;
-
-$rand = rand(1000000000,9999999999);
-$newname = "CJM-$rand$GIFSUFFIX";
-return $newname;
-}
-
-function TMPJPG()
-{
-global $JPGSUFFIX;
-
-$rand = rand(1000000000,9999999999);
-$newname = "CJM-$rand$JPGSUFFIX";
-return $newname;
-}
-
-function TMPPNG()
-{
-    global $PNGSUFFIX;
-
-$rand = rand(1000000000,9999999999);
-$newname = "CJM-$rand$PNGSUFFIX";
-return $newname;
 }
 
 
@@ -702,7 +612,7 @@ function CheckFileSize($inputFileDir)
     RecordCommand("CHECKFILESIZE PRE REDUCE $size ");
     if ($size > 800000)
     {
-        $targetName = NewName($inputFileDir);
+        $targetName = NewImageName($inputFileDir);
 		if (($width > 650) || ($height > 650))
 		{
 			$outputFileDir = GetConversionDir($targetName);
@@ -714,16 +624,6 @@ function CheckFileSize($inputFileDir)
 		}
     }
 	return $outputFilePath;
-}
-
-
-
-// ***********************************************
-function DisplayInitCropJS()
-{
-    print "<script src=\"$BASE_PATH/tools/cropper/lib/prototype.js\" type=\"text/javascript\"></script>\n";
-    print "<script src=\"$BASE_PATH/tools/cropper/lib/scriptaculous.js?load=builder,dragdrop\" type=\"text/javascript\"></script>\n";
-    print "<script src=\"$BASE_PATH/tools/cropper/cropper.js\" type=\"text/javascript\"></script>\n";
 }
 
 
@@ -796,16 +696,9 @@ function DisplayConvertButton()
 {
 global $DIR_OPS;
 
-	$op = $_SERVER['PHP_SELF'];
-	$op = basename($op);
-	$op = str_replace(".php","x.php",$op);
-    $op = "$DIR_OPS$op";
-	RecordCommand("DISPLAYCONVERTBUTTON $op");
-
 	print "<P><BR>";
-
 	print "<center>";
-    print "<button class=\"convert\" type=\"input\" onclick=\"submitOpForm()\")>Convert</button>\n";
+    print "<button class=\"convert\" type=\"button\" onclick=\"submitOpForm()\")>Convert</button>\n";
 	print "</center>";
 }
 

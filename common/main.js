@@ -5,16 +5,16 @@
  * Author: Christophewr Minson
  * https://www.christopherminson.com
  */
+const BASE_PATH = "http://54.71.108.91";   // also set in common.inc
 
-const WEB_ROOT = "https://54.71.108.91/";
-const IMAGE_BUSY = WEB_ROOT + "resources/utils/busy.gif";
+const IMAGE_BUSY = BASE_PATH + "/resources/utils/busy.gif";
 const CONVERSIONS_DIR = "/CONVERSIONS/";
 
 var ListImageURLS = [];
 var ListImageStats = [];
 
-var CurrentPosition = 0
-var PreviousPosition = 0
+var CurrentPosition = 0;
+var PreviousPosition = 0;
 var CurrentOp = "";
 var MaxPosition =  0;
 var HomePosition = 0;
@@ -104,28 +104,14 @@ var e,frame;
 
 	frame = "FRAME"+SelectedFrame;
 	e  = document.getElementById(frame);
-    e.src = WEB_ROOT+"/wimages/tools/ezimbanoop.png";
+    e.src = BASE_PATH+"/wimages/tools/ezimbanoop.png";
 
 	frame = "FRAMEPATH"+SelectedFrame;
 	e  = document.getElementById(frame);
-    e.src = WEB_ROOT+"/wimages/tools/ezimbanoop.png";
+    e.src = BASE_PATH+"/wimages/tools/ezimbanoop.png";
 
 	e = document.getElementById('ID_IMAGE_STATS');
 	e.innerHTML = error;
-}
-
-
-function deleteFrameImage(frameId)
-{
-    var frame,e;
-
-    frame = "FRAME"+frameId;
-    e  = document.getElementById(frame);
-    e.src = WEB_ROOT+"/wimages/tools/ezimbanoop.png";
-
-    frame = "FRAMEPATH"+frameId;
-    e  = document.getElementById(frame);
-    e.value = WEB_ROOT+"/wimages/tools/ezimbanoop.png";
 }
 
 
@@ -236,64 +222,11 @@ function setElement(id,v)
 
 
 
-//
-// optionally displays selection box for current image
-// this happens when we are in Crop or Overlay ops
-//
-function displayImageSelection()
-{
-    var id;
-
-    if (Ias != null)
-    {
-        Ias.cancelSelection();
-        $('#opimage').imgAreaSelect({remove:true});
-        Ias = null;
-    }
-    if ((CurrentOp.indexOf("crop") > -1) || (CurrentOp.indexOf("overlay") > -1))
-    {
-        Ias = $('#opimage').imgAreaSelect({ handles: true,
-            fadeSpeed: 200, onSelectChange: updateview, instance: true });
-        $('#opimagex').imgAreaSelect({ x1: 5, y1: 5, x2: 60, y2: 40 });
-        setElement('X1',5);
-        setElement('Y1',5);
-        setElement('X2',60);
-        setElement('Y2',40);
-        setElement('W',55);
-        setElement('H',35);
-    }
-    PreviousPosition = CurrentPosition;
-    //Ias.setOptions({ show: true });
-    //Ias.update();
-}
-
-function deleteImageAreaSelection()
-{
-    if (Ias != null)
-    {
-        Ias.cancelSelection();
-        id = '#image'+CurrentPosition;
-        $(id).imgAreaSelect({remove:true});
-        Ias = null;
-        CurrentOp = ""; // must do so we won't think we're still on an op page
-    }
-}
-
-function openCurrentImage()
-{
-	OpImage = getCurrentImage();
-	window.open(OpImage,"_blank");
-}
-
 function viewCurrentImage()
 {
-	OpImage = getCurrentImage();
-	imageArray = OpImage.split("/");
-	len = imageArray.length;
-	var image = CONVERSIONS_DIR+imageArray[len-1];
-	var e = document.getElementById('viewimage');
-	var v = WEB_ROOT+"/ops/displayimage.html?CURRENTFILE="+image;
-	e.href=v;
+	var imageDir = getCurrentImageDir();
+
+	document.getElementById('viewimage').href = BASE_PATH+"/displayimage.html?CURRENTFILE="+imageDir;
 }
 
 function returnToMainArea()
@@ -301,19 +234,14 @@ function returnToMainArea()
     var e;
 
     hide('ID_RETURN_TO_MAINPAGE');
-	e = document.getElementById('ID_MAIN_SLIDER');
-	if (e != null)
-	{
-			var scroll = 0;
-			var s = "-"+scroll+"px";
-			e.style.left = s;
-	}
-    deleteImageAreaSelection();
-    return;
+	var scroll = 0;
+	var s = "-"+scroll+"px";
+    document.getElementById('ID_MAIN_SLIDER').style.left = s;
 }
 
 function selectArg(argValue) 
 {
+    console.log('selectArg');
     var arg1 = document.getElementById('ARG1');
     arg1.value = argValue;
     console.log('selectArg', arg1);
@@ -376,7 +304,7 @@ function displayCurrentImage()
 	var stats = ListImageStats[CurrentPosition];
 
 	// set the this displayed image as the one to share (should user hit share button)
-	//imageURL = WEB_ROOT + imageURL;
+	//imageURL = BASE_PATH + imageURL;
     /*
     $("#share_container").jsSocials({
         url : imageURL,
@@ -415,25 +343,29 @@ function hideBusyImage()
 
 function displayBusyImage()
 {
-    var e = document.getElementById('ID_MAIN_IMAGE');
-    
-
-    e.src = IMAGE_BUSY;
+    document.getElementById('ID_MAIN_IMAGE').src = IMAGE_BUSY;
     console.log('displayBusyImage');
 
 	BusyDisplayed = 1;
 }
 
-function getCurrentImage()
+function getCurrentImageURL()
 {
-
 	var imageURL = null;
 
 	if (CurrentPosition < ListImageURLS.length)  {
 		imageURL = ListImageURLS[CurrentPosition];
 	}
-
 	return imageURL;
+}
+
+function getCurrentImageDir()
+{
+	var imageURL = getCurrentImageURL();
+    if (imageURL == null) return null;
+
+    var imageArray = imageURL.split("/");
+	return CONVERSIONS_DIR+imageArray[imageArray.length - 1];
 }
 
 function setDownloadImageLink(imageURL)
@@ -448,15 +380,8 @@ function setDownloadImageLink(imageURL)
 
 function setCurrentImage(imageURL)
 {
-    var e = document.getElementById('ID_MAIN_IMAGE');
-    e.src = imageURL;
+    document.getElementById('ID_MAIN_IMAGE').src = imageURL;
 	setDownloadImageLink(imageURL);
-
-}
-
-function imageReady()
-{
-    displayImageSelection();
 }
 
 function setHiddenImage(image)
@@ -544,19 +469,6 @@ function setCurrentStatus(image,text)
 {
 	var id = BaseStatusId+CurrentPosition;
     var e = document.getElementById('opstatus');
-
-	// special case: if this is result of batchoperation then
-	// display a link to the batch viewer
-	if ((text.indexOf("BATCH")) != -1)
-	{
-		OpImage = getCurrentImage();
-		imageArray = OpImage.split("/");
-		len = imageArray.length;
-		image = CONVERSIONS_DIR+imageArray[len-1];
-		var url=WEB_ROOT+"/ops/batchview.html?"+"CURRENTFILE="+image;
-		var link="<a target=blank href="+url+">Batched Results</a>";
-		text = text+"&nbsp;&nbsp;&nbsp;&nbsp;"+link;
-	}
     e.innerHTML = text;
 }
 
@@ -608,7 +520,7 @@ function setHomeImage(imageURL,position)
 
 	if (imageURL == null)
 	{
-		imageURL = WEB_ROOT+"/wimages/tools/blank.jpg";
+		imageURL = BASE_PATH+"/wimages/tools/blank.jpg";
 		HomePosition = 0;
 	}
 	e.src = imageURL;
@@ -616,20 +528,14 @@ function setHomeImage(imageURL,position)
 
 function enableConvertButton()
 {
-	var e = document.getElementById('convert1');
-	if (e != null)
-	{
-		e.disabled = false;
-	}
+    var e = document.getElementById('convert1');
+    if (e != null) e.disabled = false;
 }
 
 function disableConvertButton()
 {
-	var e = document.getElementById('convert1');
-	if (e != null)
-	{
-		e.disabled = true;
-	}
+    var e = document.getElementById('convert1');
+    if (e != null) e.disabled = true;
 }
 
 function executeLoad()
@@ -637,7 +543,7 @@ function executeLoad()
     console.log("executeLoad");
 	show('opimage');
 
-    OpImage = getCurrentImage();
+    OpImage = getCurrentImageURL();
 	displayBusyImage();
 }
 
@@ -651,10 +557,13 @@ function completeWithNoAction()
 	}
 }
 
-
-function completeImageLoad(image,text,segmentInfo)
+//
+// Invoked once the image has been successfully loaded
+// This function is invoked via javascript injection at ./ops/loadx.php
+//
+function completeImageLoad(image,text)
 {
-    console.log("completeImageLoad: ", image, text, segmentInfo);
+    console.log("completeImageLoad: ", image, text);
 	enableConvertButton();
 
 	if (BusyDisplayed == 0)
@@ -665,10 +574,15 @@ function completeImageLoad(image,text,segmentInfo)
 	//show('imagearea');
 	show('ID_MAIN_SLIDER');
 
+    ListImageURLS = [];
+    ListImageStats = [];
+    CurrentPosition = 0;
+    PreviousPosition = 0;
+    NextPosition = 0;
 
-
-	//var relImage = image.replace(WEB_ROOT,".");
-	var relImage = image.replace(WEB_ROOT,"");
+	//var relImage = image.replace(BASE_PATH,".");
+	var relImage = image.replace(BASE_PATH,"");
+    console.log(relImage, image);
 
 	//console.log("Adding Image: ", relImage);
 	//addImage(relImage,text);
@@ -676,17 +590,19 @@ function completeImageLoad(image,text,segmentInfo)
 
 	setHomeImage(image,CurrentPosition);
 
-    document.getElementById('ID_OBJECT_VALUES').innerHTML = segmentInfo;
+    //document.getElementById('ID_OBJECT_VALUES').innerHTML = segmentInfo;
 }
 
-
+//
+// Invoked once a conversion has been executed on an image.
+// This function is invoked the PHP RecordAndComplete() in common.inc.
+//
 function completeImageOp(image,text)
 {
 	enableConvertButton();
 
-
-	//var relImage = image.replace(WEB_ROOT,".");
-	var relImage = image.replace(WEB_ROOT,"");
+	//var relImage = image.replace(BASE_PATH,".");
+	var relImage = image.replace(BASE_PATH,"");
 	console.log("completeImageOp: ", image, relImage);
 
 	// if this is true, indicates the op was cancelled via 
@@ -699,32 +615,48 @@ function completeImageOp(image,text)
 	hideBusyImage();
 }
 
-function xsubmitOpForm()
+//
+// Execute the operation submission
+// This is called via a timer from submitOpForm()
+// 
+function backgroundSubmitOpForm()
 {
-    var e = document.getElementById('ID_OP_SUBMITFORM');
-    if (e == null)
-    {
-        alert("processing error - please try again");
-        return;
-    }
-    console.log('xsubmitOpForm', e);
-    executeOp();
-    e.submit();
+    console.log('backgroundSubmitOpForm');
 
+    // disable convertButton. display busy image 
+	disableConvertButton();
+	displayBusyImage();
+
+    // set current variable to the current image
+    // this is the image we will operate on
+    // this gets sent to php during the submit
+    var imageDir = getCurrentImageDir();
+	document.getElementById('current').value = imageDir;
+
+    // execute the fom POSTR
+    document.getElementById('ID_OP_SUBMITFORM').submit();
 }
 
+function test()
+{
+    console.log('test');
+}
+
+//
+// Submit the operation form.  This gets called when
+// user clicks the Convert button
+//
 function submitOpForm()
 {
-    // CJM DEV - more validation here
-    setTimeout(xsubmitOpForm, 500);
+    console.log('submitOpForm');
+
+    // Don't want to block.  
+    // Therefore run submission in background, not in main thread
+    setTimeout(backgroundSubmitOpForm, 500);
 }
 
 function executeOp()
 {
-var e;
-var image;
-var len;
-var imageArray;
 
 	// if already busy don't allow multiple converts
 	if (BusyDisplayed == 1)
@@ -737,28 +669,14 @@ var imageArray;
 	}
 	displayBusyImage();
 
-	//show('imagearea');
-
-	image = "";
-    OpImage = getCurrentImage();
-	if (OpImage != null)
-	{
-		imageArray = OpImage.split("/");
-		len = imageArray.length;
-		image = CONVERSIONS_DIR+imageArray[len-1];
-        console.log('executeOp');
-        console.log(image);
-	}
-
-	e = document.getElementById('current');
-	e.value = image;
+    var imageDir = getCurrentImageDir();
+	document.getElementById('current').value = imageDir;
 }
 
 function reportOpError(error)
 {
 	hideBusyImage();
-	e = document.getElementById('ID_IMAGE_STATS');
-	e.innerHTML = error;
+	document.getElementById('ID_IMAGE_STATS').innerHTML = error;
 }
 
 
@@ -803,9 +721,6 @@ function getajaxRequest()
 
 function displayOp(op)
 {
-	var image;
-	var imageArray;
-	var len;
     var ajaxRequest = getajaxRequest();
 
     CurrentOp = op;
@@ -817,27 +732,21 @@ function displayOp(op)
 			var e;
             if (response.length > 10)
             {
-			e  = document.getElementById('ID_OP_FORM');
-			e.innerHTML = response;
+			document.getElementById('ID_OP_FORM').innerHTML = response;
 			displayOpForm();
             show('ID_RETURN_TO_MAINPAGE');
-            displayImageSelection();
             }
         }
 	}
 
-	var params="";
-	OpImage = getCurrentImage();
-	if (OpImage != null) 
-	{
-		imageArray = OpImage.split("/");
-		len = imageArray.length;
-		image = CONVERSIONS_DIR+imageArray[len-1];
-		params="CURRENTFILE="+image;
-	}
-	ajaxRequest.open("POST",op,true);
-	ajaxRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-	ajaxRequest.send(params);
+	var imageDir = getCurrentImageDir();
+    if (imageDir != null) 
+    {
+	    var	params="CURRENTFILE="+imageDir;
+	    ajaxRequest.open("POST",op,true);
+	    ajaxRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	    ajaxRequest.send(params);
+    }
 }
 
 function execSimpleOp(op,target)
@@ -874,16 +783,12 @@ function execSimpleOp(op,target)
         }
 	}
 
-	var params="";
-	OpImage = getCurrentImage();
-	if (OpImage != null)	
+	var imageDir = getCurrentImageDir();
+	if (imageDir != null)	
 	{
 		displayBusyImage();
-		imageArray = OpImage.split("/");
-		len = imageArray.length;
-		image = CONVERSIONS_DIR+imageArray[len-1];
-        console.log(image);
-		params="CURRENTFILE="+image+"&TGT="+target;
+        console.log(imageDir);
+		var params="CURRENTFILE="+imageDir+"&TGT="+target;
 		ajaxRequest.open("POST",op,true);
 		ajaxRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 		ajaxRequest.send(params);
@@ -907,7 +812,7 @@ function selectTableItem(id,path,file,status)
 function logTrace(text)
 {
 	text = "JSTRACE: " + text;
-	var log = WEB_ROOT+"/zs/jstrace.php";
+	var log = BASE_PATH+"/zs/jstrace.php";
 	var params = "VALUE="+text;
     var ajaxRequest = getajaxRequest();
 	ajaxRequest.open("POST",log,true);
@@ -918,7 +823,7 @@ function logTrace(text)
 
 function createSharedImage(imageURL)
 {
-	var target = WEB_ROOT+"/zs/jsshare.php";
+	var target = BASE_PATH+"/zs/jsshare.php";
 	var params = "VALUE="+imageURL;
     var ajaxRequest = getajaxRequest();
 	ajaxRequest.open("POST",target,true);

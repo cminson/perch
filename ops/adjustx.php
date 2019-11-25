@@ -52,7 +52,7 @@ case "DOWN_SHARP":
 	break;
 };
 
-$targetName = NewName($inputFileDir);
+$targetName = NewImageName($inputFileDir);
 $outputFileDir = GetConversionDir($targetName);
 $outputFilePath = GetConversionPath($targetName);
 $command = "$command $inputFileDir $outputFileDir";

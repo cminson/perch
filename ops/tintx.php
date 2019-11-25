@@ -7,7 +7,7 @@ $LastOperation = 'Tinted';
 
 $TintColor = $_POST['COLOR'];
 $TintLevel = $_POST['TINTLEVEL'];
-RecordCommand("$TintColor");
+RecordCommand("TINT BEGINS: $TintColor");
 
 if (strlen($TintColor) < 2) { $TintColor = "FF0000"; }
 
