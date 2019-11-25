@@ -13,6 +13,9 @@ import skimage.io
 import matplotlib
 import matplotlib.pyplot as plt
 from PIL import Image
+import logging
+LOG_FILENAME = '/var/www/perch/ops/python.log'
+logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -37,13 +40,6 @@ COCO_CLASS_NAMES = ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
                'keyboard', 'cell phone', 'microwave', 'oven', 'toaster',
                'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
                'teddy bear', 'hair drier', 'toothbrush']
-# Disable
-def blockPrint():
-    sys.stdout = open(os.devnull, 'w')
-
-# Restore
-def enablePrint():
-    sys.stdout = sys.__stdout__
 
 if __name__ == '__main__':
 
@@ -52,9 +48,8 @@ if __name__ == '__main__':
         print('ERROR', end='')
         exit()
 
-    blockPrint()
     inputFileDir = sys.argv[1]
-    file_name = os.path.basename(inputFileDir).split('.')[0]
+    file_name =  os.path.basename(inputFileDir).split('.')[0]
     #print(file_name)
 
     # Locally import Mask RCNN and coco
@@ -74,8 +69,11 @@ if __name__ == '__main__':
     #config.display()
 
     # Create model object in inference mode, fold in weights
+    logging.debug('HERE1')
     model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_PATH, config=config)
+    logging.debug('HERE1x')
     model.load_weights(MODEL_WEIGHTS_PATH, by_name=True)
+    logging.debug('HERE2')
 
     image = skimage.io.imread(inputFileDir)
     results = model.detect([image], verbose=1)
@@ -89,21 +87,21 @@ if __name__ == '__main__':
     print(r['class_ids'])
     print(r['scores'])
     """
-    enablePrint()
-    print('HERE', end='')
-    exit()
 
     #DEV
     object_name = COCO_CLASS_NAMES[1]
     masks = r['masks']
-    score = 0
+    raw_score = r['scores'][0]
+    #print(raw_scores)
+    score = int(raw_score * 100)
 
     masks = masks.astype(np.uint8)
     bitmap = masks[:,:,0]
     bitmap[bitmap > 0] = 255
     #print(bitmap.shape)
 
-    outputFileDir = f'../CONVERSIONS/{file_name}.{object_name}.{score}.mask.png'
+    logging.debug('HERE3')
+    outputFileDir = f'../CONVERSIONS/m{file_name}.{object_name}.{score}.png'
     #print(outputFileDir)
     im = Image.fromarray(bitmap, 'L')
     im.save(outputFileDir, 'PNG')

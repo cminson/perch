@@ -62,6 +62,8 @@ function NewBaseImageName()
 
 function NewImageName($name)
 {
+    global $NewImageName;
+
     $terms = explode('.',$name);
     $termCount = count($terms);
 

@@ -57,7 +57,9 @@ $UploadSuccess = TRUE;
 
 // Exec AI segment analysis of uploaded file
 $command = escapeshellcmd("python ./mlsegment.py $outputFileDir");
-shell_exec($command);
+//$command = escapeshellcmd("python ./test.py $outputFileDir");
+$r = shell_exec($command);
+RecordCommand("XLOAD: $command $r");
 
 GetImageAttributes($outputFileDir,$width,$height,$size);
 RecordCommand("LOADX $outputFileDir");
