@@ -37,7 +37,7 @@ if (filesize($tmpName) == 0)
 // if we reached this point, then the image load succeeded
 // convert it to a jpg and store in conversions dir
 // 
-$targetName = NewBaseImageName();
+$targetName = NewImageName();
 $outputFileDir = GetConversionDir($targetName);
 $outputFilePath = GetConversionPath($targetName);
 $command = "convert $tmpName $outputFileDir";
@@ -55,11 +55,6 @@ RecordCommand("XLOAD: UPLOAD JPG $tmpName $outputFileDir");
 chmod($outputFileDir,0777);
 $UploadSuccess = TRUE;
 
-// Exec AI segment analysis of uploaded file
-$command = escapeshellcmd("python ./mlsegment.py $outputFileDir");
-//$command = escapeshellcmd("python ./test.py $outputFileDir");
-$r = shell_exec($command);
-RecordCommand("XLOAD: $command $r");
 
 GetImageAttributes($outputFileDir,$width,$height,$size);
 RecordCommand("LOADX $outputFileDir");
@@ -73,6 +68,13 @@ if ($size > $MAX_FILE_SIZE)
 		RecordCommand("LOADX RESIZE $size $width $height");
     }
 }
+
+// Exec AI segment analysis of uploaded file
+$command = escapeshellcmd("python ./mlsegment.py $outputFileDir");
+$r = shell_exec($command);
+RecordCommand("XLOAD SEGMENT ANALYSIS: $command $r");
+
+
 $stats = GetStatString($outputFileDir);
 
 // inform javascript caller that the image is loaded and ready for display

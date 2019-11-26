@@ -37,10 +37,19 @@ $RESIZE_MAX_HEIGHT= 800;  // Resize target height when resizing overly large fil
 $current = getGETVar('CURRENTFILE');
 $RecordCommandOn=TRUE;
 
+$IMAGE_SUFFIX = '.png';
+
 
 /////////////////////////////////////////////////////
 //Common Functions
 ////////////////////////////////////////////////////
+//
+//
+function MakeRandom()
+{
+    $rand = rand(100000,999999);
+    return $rand;
+}
 
 
 function StripSuffix($name)
@@ -53,43 +62,54 @@ function StripSuffix($name)
 	return $newName;
 }
 
-function NewBaseImageName()
+function ApplyRegionOperation($originalFileDir, $convertedFileDir, $maskFileDir)
 {
-    $session = time() % 1000000;
-    $newName = "$session.000.jpg";
-    return $newName;
+    $targetName = NewTMPImageName($convertedFileDir);
+    $cutterFileDir = GetConversionDir($targetName);
+    $command = "convert -transparent white -fuzz 40% $maskFileDir $cutterFileDir";
+    RecordCommand($command);
+    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+
+    $targetName = NewTMPImageName($convertedFileDir);
+    $tmp1FileDir = GetConversionDir($targetName);
+    $command = "composite -geometry +0+0 $cutterFileDir $convertedFileDir $tmp1FileDir";
+    RecordCommand($command);
+    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+
+    $targetName = NewTMPImageName();
+    $tmp2FileDir = GetConversionDir($targetName);
+    $command = "convert -transparent black -fuzz 40% $tmp1FileDir $tmp2FileDir";
+    RecordCommand($command);
+    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+
+    $targetName = NewImageName();
+    $resultFileDir = GetConversionDir($targetName);
+    $command = "composite -geometry +0+0 $tmp2FileDir $originalFileDir $resultFileDir";
+    RecordCommand($command);
+    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+
+    return $resultFileDir;
+    //return $originalFileDir;
+
 }
 
-function NewImageName($name)
+function NewImageName()
 {
-    global $NewImageName;
+    global $IMAGE_SUFFIX;
 
-    $terms = explode('.',$name);
-    $termCount = count($terms);
-
-    $index = intval($terms[$termCount - 2]);
-    $session = $terms[$termCount - 3];
-
-    // find an unallocated file name for this session
-    while (True) 
-    {
-        $index += 1;
-        $index_string = str_pad("$index", 3, "0", STR_PAD_LEFT);
-        $newName = $session.".".$index_string.".jpg";
-        $newNameDir = "$BASE_DIR$newName";
-        if (file_exists($newNameDir) == False) return $newName;
-    }
+    $r = rand(100000,999999);
+    return "$r$IMAGE_SUFFIX";
 }
 
-function NewTMPImageName($name)
+
+function NewTMPImageName()
 {
-    return 'x'.NewImageName($name);
-    return $newName;
+    return 'x'.NewImageName();
 }
 
-function NewMaskImageName($name)
+function NewMaskImageName()
 {
-    return 'm'.NewImageName($name);
+    return 'm'.NewImageName();
 }
 
 
@@ -115,12 +135,43 @@ function RecordCommand($command)
 	}
 }
 
+//
+// for the given image, retrieve all region mask
+// files associated with it
+//
+function GetImageRegions($imageDir)
+{
+    global $CONVERSION_DIR;
+
+    $matchName = explode('.', basename($imageDir))[0];
+    RecordCommand("GetImageRegions $matchName");
+    return array_reverse((glob($CONVERSION_DIR.'m'.$matchName.'*')));
+}
+
+function DisplayRegionPicker($text, $name, $regionList)
+{
+	print  $text;
+	DisplaySep0();
+	print  "<select name=\"$name\">\n";
+	print  "<option value=\"ALL\" selected>Entire Image\n";
+
+    foreach ($regionList as $regionFile)
+    {
+        $terms = explode('.', $regionFile);
+        $regionName = $terms[1];
+	    print  "<option value=\"$regionFile\">$regionName\n";
+    }
+	print  "</select>\n";
+
+}
+
+
 function ConvertToJPG($inputFileDir)
 {
 global $CONVERT_DIR;
 global $JPGSUFFIX;
 
-    $targetName = NewImageName($inputFileDir);
+    $targetName = NewImageName();
     $outputFileDir = "$CONVERT_DIR$targetName";
     $command = "convert $inputFileDir $outputFileDir";
     //RecordCommand("DEV ConvertToJPG $command");
@@ -325,31 +376,6 @@ function DisplayOpButton($label, $opHandler)
 }
 
 
-
-
-
-
-
-function GetFileSuffix($name)
-{
-$default = "gif";
-$len = strlen($name);
-
-    if ($len <= 4)
-        return $default;
-    $s = substr($name,$len-4,4);
-    if ((stristr($s,"gif")) != FALSE)
-        return "gif";
-    if ((stristr($s,"jpg")) != FALSE)
-        return "jpg";
-    if ((stristr($s,"png")) != FALSE)
-        return "png";
-    if ((stristr($s,"bmp")) != FALSE)
-        return "bmp";
-    return $default;
-}
-
-
 function DetermineImageSize($path,$w,$h)
 {
     $w = $h = 0;
@@ -509,7 +535,7 @@ function ResizeImage($imageDir, $width, $height, $exactFit)
 {
 
     //RecordCommand("XRESIZE");
-    $targetName = NewImageName($imageDir);
+    $targetName = NewImageName();
     $outputFileDir = GetConversionDir($targetName);
     if ($exactFit == TRUE)
         $command = "convert -resize $width"."x"."$height"."\!"." $imageDir $outputFileDir";
@@ -538,31 +564,6 @@ function ResizeTMPImage($imageDir, $width, $height, $exactFit)
     return $outputFileDir;
 }
 
-
-function GetAnimatedImages($animatedFile)
-{
-global $PNGSUFFIX;
-global $GIFGSUFFIX;
-
-    //RecordCommand("GetAnimatedImages: $animatedFile");
-    $targetName = TMPPNG();
-	$outputFileDir = GetConversionDir($targetName);
-    $command = "convert $animatedFile $outputFileDir";
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-    RecordCommand("GetAnimatedImages: $command");
-
-    $imageList = array();
-    for ($i=0;;$i++)
-    {
-		$targetName = StripSuffix($targetName);
-	    $imageFileDir = GetConversionDir("$targetName-$i$PNGSUFFIX");
-        //RecordCommand("IMAGE: $imageFileDir");
-        if (file_exists($imageFileDir) == FALSE)
-            break;
-        $imageList[] = $imageFileDir;
-    }
-    return $imageList;
-}
 
 
 function DisplayCurrentClickableImageReturnMain($current,$returnToMainPage)
@@ -614,7 +615,7 @@ function CheckFileSize($inputFileDir)
     RecordCommand("CHECKFILESIZE PRE REDUCE $size ");
     if ($size > 800000)
     {
-        $targetName = NewImageName($inputFileDir);
+        $targetName = NewImageName();
 		if (($width > 650) || ($height > 650))
 		{
 			$outputFileDir = GetConversionDir($targetName);
@@ -1049,8 +1050,6 @@ function DisplayFuzzPicker($text, $name, $default)
 
 function DisplayPercentPicker($text, $name)
 {
-
-
 	print  $text;
 	DisplaySep0();
 	print  "<select name=\"$name\">\n";
@@ -1429,73 +1428,6 @@ global $MAX_ANIM_FRAME_SIZE;
 }
 
 
-
-function DisplayAnimModifyTable($current,$max_anim)
-{
-global $BASE_DIR;
-global $MAX_ANIM_FRAME_SIZE;
-
-
-	$inputFileDir = "$BASE_DIR$current";
-	$inputFileName = basename($inputFileDir);
-
-	print "<center>\n";
-    print "<input type=\"hidden\" name=\"CURRENTFILE\" value=\"$current\">\n";
-	print "<input type=\"hidden\" name=\"ANIMATION\" value=\"TRUE\">\n";
-
-	print "<table class=\"selections\" cellspacing=3 cellpadding=3>\n";
-    $imageList = GetAnimatedImages($inputFileDir);
-    $col = $i = 1;
-    foreach ($imageList as $image)
-    {
-		if ($col == 1)
-		{
-			print "<tr>\n";
-		}
-
-        $inputFileName = basename($image);
-		print "<td align=center>\n";
-        print "<input type=\"hidden\" name=\"FILENAME$i\" value=\"$inputFileName\">";
-        print "$i \n";
-        print "<br>\n";
-
-        $path = GetConversionPath($inputFileName);
-        print "<img src=\"$path\" width=\"50\" height=\"50\" alt=\"\">\n";
-		print "<br>\n";
-        print "Delete: <input type=checkbox name=\"DELETE$i\">\n";
-        print "</td>\n";
-        $i++;
-		if ($col == 3)
-		{
-			print "</tr>\n";
-			$col = 0;
-		}
-		$col++;
-    }
-    for ($i = $i; $i <= $max_anim; $i++)
-    {
-		if ($col == 0)
-		{
-			print "<tr>\n";
-		}
-		print "<td align=center>\n";
-        print "$i <input type=hidden name=MAX_FILE_SIZE value=$MAX_ANIM_FRAME_SIZE>\n";
-		print "<br\n";
-        print "<input size=20 maxLength=40 type=\"FILE\" name=\"FILENAME$i\">\n";
-        print "</td>\n";
-		if ($col == 3)
-		{
-			print "</tr>\n";
-			$col = 0;
-		}
-		$col++;
-
-    }
-	print "</table>\n";
-	print "<center>\n";
-}
-
-
 function DisplayHiddenField($id)
 {
 	print  "<input type=\"hidden\" name=\"$id\" id=\"$id\" value=\"\">";
@@ -1598,72 +1530,6 @@ global $MAX_ANIM_FRAME_SIZE;
 
 }
 
-
-function DisplayModifyTable($current,$max_anim)
-{
-global $BASE_DIR;
-global $MAX_ANIM_FRAME_SIZE;
-
-
-    $inputFileDir = "$BASE_DIR$current";
-    $inputFileName = basename($inputFileDir);
-
-    print  "<center>\n";
-    print  "<input type=\"hidden\" name=\"CURRENTFILE\" value=\"$current\">\n";
-    print  "<input type=\"hidden\" name=\"ANIMATION\" value=\"TRUE\">\n";
-
-    print  "<table class=\"selections\" cellspacing=3 cellpadding=3>\n";
-    $imageList = GetAnimatedImages($inputFileDir);
-    $col = $i = 1;
-    foreach ($imageList as $image)
-    {
-        if ($col == 1)
-        {
-            print  "<tr>\n";
-        }
-
-        $inputFileName = basename($image);
-        print  "<td align=center>\n";
-        print  "<input type=\"hidden\" name=\"FILENAME$i\" value=\"$inputFileName\">";
-        //print  "$i \n";
-		$seq = "SEQ$i";
-        print  "<input type=\"text\" size=\"2\" maxlength=\"2\" name=\"$seq\" value=\"$i\"></input>\n";
-        print  "<br>\n";
-
-        $path = GetConversionPath($inputFileName);
-        print  "<img src=\"$path\" width=\"50\" height=\"50\" alt=\"\">\n";
-        print  "<br>\n";
-        print  "Delete: <input type=checkbox name=\"DELETE$i\">\n";
-        print  "</td>\n";
-        $i++;
-        if ($col == 3)
-        {
-            print  "</tr>\n";
-            $col = 0;
-        }
-        $col++;
-    }
-    for ($i = $i; $i <= $max_anim; $i++)
-    {
-        if ($col == 0)
-        {
-            print  "<tr>\n";
-        }
-        print  "<td align=center>\n";
-        print  "$i <input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"$MAX_ANIM_FRAME_SIZE\">\n";
-        print  "<br>\n";
-        print  "<input size=\"20\" maxLength=\"40\" type=\"FILE\" name=\"FILENAME$i\">\n";
-        print  "</td>\n";
-        if ($col == 3)
-        {
-            print  "</tr>\n";
-            $col = 0;
-        }
-        $col++;
-    }
-    print  "</table>\n";
-    print  "<center>\n";
-}
 
 
 function DisplayDivColorPicker()
