@@ -69,45 +69,46 @@ if __name__ == '__main__':
     #config.display()
 
     # Create model object in inference mode, fold in weights
-    logging.debug('HERE1')
     model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_PATH, config=config)
-    logging.debug('HERE1x')
     model.load_weights(MODEL_WEIGHTS_PATH, by_name=True)
-    logging.debug('HERE2')
 
     image = skimage.io.imread(inputFileDir)
     results = model.detect([image], verbose=1)
-    r = results[0]
 
-    #r['rois'], r['masks'], r['class_ids'], class_names, r['scores'])
-    #always one result.
+    logging.debug(f'RESULTS: {len(results)}')
 
     """
+    r['rois'], r['masks'], r['class_ids'], class_names, r['scores'])
+    always one result.
     print(COCO_CLASS_NAMES)
     print(r['class_ids'])
     print(r['scores'])
     """
+    logging.debug(f'HERE1')
 
-    #DEV
-    object_name = COCO_CLASS_NAMES[1]
-    masks = r['masks']
-    raw_score = r['scores'][0]
-    #print(raw_scores)
-    score = int(raw_score * 100)
-
+    result = results[0]
+    class_ids = result['class_ids']
+    masks = result['masks']
     masks = masks.astype(np.uint8)
-    bitmap = masks[:,:,0]
-    bitmap[bitmap > 0] = 255
-    #print(bitmap.shape)
+    scores = result['scores']
 
-    logging.debug('HERE3')
-    outputFileDir = f'../CONVERSIONS/m{file_name}.{object_name}.{score}.png'
-    #print(outputFileDir)
-    im = Image.fromarray(bitmap, 'L')
-    im.save(outputFileDir, 'PNG')
+    for index, class_id in enumerate(class_ids):
 
-    #result = f'{object_name},{outputFileDir},{score}'
-    print(outputFileDir, end='')
+        object_name = COCO_CLASS_NAMES[class_id].replace(' ', '_')
+        score = scores[index]
+        score = int(score * 100)
+
+        bitmap = masks[:,:,index]
+        bitmap[bitmap > 0] = 255
+        #print(bitmap.shape)
+
+        logging.debug('HERE2')
+        outputFileDir = f'../CONVERSIONS/m{file_name}.{object_name}.{score}.png'
+        #print(outputFileDir)
+        im = Image.fromarray(bitmap, 'L')
+        im.save(outputFileDir, 'PNG')
+
+        logging.debug(f'{object_name} {score}')
 
 
 

@@ -97,7 +97,7 @@ function NewImageName()
 {
     global $IMAGE_SUFFIX;
 
-    $r = rand(100000,999999);
+    $r = rand(1000000,9999999);
     return "$r$IMAGE_SUFFIX";
 }
 
@@ -107,9 +107,10 @@ function NewTMPImageName()
     return 'x'.NewImageName();
 }
 
-function NewMaskImageName()
+function NewMaskImageName($imageDir)
 {
-    return 'm'.NewImageName();
+    $baseName = basename($imageDir);
+    return "m$baseName";
 }
 
 
@@ -533,8 +534,6 @@ function GetColorCount($imageDir)
 
 function ResizeImage($imageDir, $width, $height, $exactFit)
 {
-
-    //RecordCommand("XRESIZE");
     $targetName = NewImageName();
     $outputFileDir = GetConversionDir($targetName);
     if ($exactFit == TRUE)
@@ -542,7 +541,6 @@ function ResizeImage($imageDir, $width, $height, $exactFit)
     else
         $command = "convert -resize $width"."x"."$height $imageDir $outputFileDir";
 
-    //RecordCommand("XRESIZE: $command");
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
     return $outputFileDir;
 }
@@ -619,7 +617,7 @@ function CheckFileSize($inputFileDir)
 		if (($width > 650) || ($height > 650))
 		{
 			$outputFileDir = GetConversionDir($targetName);
-			$outputFilePath = GetConversonPath($targetName);
+			$outputFilePath = GetConversionPath($targetName);
 
 			$command = "convert -resize 650x650 $inputFileDir $outputFileDir";
 			$execResult = exec("$command 2>&1", $lines, $ConvertResultCode);

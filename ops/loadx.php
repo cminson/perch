@@ -35,7 +35,7 @@ if (filesize($tmpName) == 0)
 
 //
 // if we reached this point, then the image load succeeded
-// convert it to a jpg and store in conversions dir
+// convert it to a png and store in conversions dir
 // 
 $targetName = NewImageName();
 $outputFileDir = GetConversionDir($targetName);
@@ -71,8 +71,8 @@ if ($size > $MAX_FILE_SIZE)
 
 // Exec AI segment analysis of uploaded file
 $command = escapeshellcmd("python ./mlsegment.py $outputFileDir");
-$r = shell_exec($command);
-RecordCommand("XLOAD SEGMENT ANALYSIS: $command $r");
+shell_exec($command);
+RecordCommand("XLOAD SEGMENT ANALYSIS: $command");
 
 
 $stats = GetStatString($outputFileDir);
