@@ -7,9 +7,11 @@ $LastOperation = 'Color Effect: ';
 
 $Arg = $_POST['ARG1'];
 $Setting = $_POST['SETTING'];
+$Region = $_POST['REGION'];
 
 $inputFileDir = $_POST['CURRENTFILE'];
-$inputFileDir = "$BASE_DIR$inputFileDir";
+$inputFileDir = GetConversionDir($inputFileDir);
+$originalFileDir = $inputFileDir;
 
 switch ($Arg)
 {
@@ -55,7 +57,7 @@ default:
     break;
 }
 
-$targetName = NewName($inputFileDir);
+$targetName = NewImageName();
 $outputFileDir = GetConversionDir($targetName);
 $outputFilePath = GetConversionPath($targetName);
 
@@ -63,6 +65,15 @@ $command = "$command $inputFileDir $outputFileDir";
 $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 
 RecordCommand("$command");
+
+if ($Region != 'ALL') {
+
+    RecordCommand("Applying Region Operation").
+    $maskFileDir = GetConversionDir($Region);
+    $outputFileDir = ApplyRegionOperation($originalFileDir, $outputFileDir, $maskFileDir);
+    $outputFilePath = GetConversionPath($outputFileDir);
+}
+
 RecordCommand("FINAL $outputFilePath");
 
 RecordAndComplete('COLOR',$outputFilePath,FALSE);

@@ -5,12 +5,14 @@ if (CompleteWithNoAction()) return;
 
 $LastOperation = 'Textured';
 $Arg = $_POST['ARG1'];
+$Region = $_POST['REGION'];
+
 RecordCommand("Texture $Arg");
 
 
 $inputFileDir = $_POST['CURRENTFILE'];
 $inputFileDir = "$BASE_DIR$inputFileDir";
-
+$originalFileDir = $inputFileDir;
 
 switch ($Arg)
 {
@@ -201,6 +203,15 @@ case 'sketch':
 }
 
 RecordCommand("$command");
+
+if ($Region != 'ALL') {
+
+    RecordCommand("Applying Region Operation").
+    $maskFileDir = GetConversionDir($Region);
+    $outputFileDir = ApplyRegionOperation($originalFileDir, $outputFileDir, $maskFileDir);
+    $outputFilePath = GetConversionPath($outputFileDir);
+}
+
 
 //$outputFilePath = CheckFileSize($outputFileDir);
 RecordCommand("FINAL $outputFilePath");

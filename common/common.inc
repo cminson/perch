@@ -107,10 +107,16 @@ function NewTMPImageName()
     return 'x'.NewImageName();
 }
 
-function NewMaskImageName($imageDir)
+function NewRegionMaskName($imageDir, $objectName, $score)
 {
+    global $IMAGE_SUFFIX;
+
     $baseName = basename($imageDir);
-    return "m$baseName";
+    RecordCommand($baseName);
+    $baseName = explode('.', $baseName)[0];
+    RecordCommand($baseName);
+    $maskName = "m$baseName.$objectName.$score$IMAGE_SUFFIX";
+    return $maskName;
 }
 
 
