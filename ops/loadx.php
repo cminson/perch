@@ -37,16 +37,16 @@ if (filesize($tmpName) == 0)
 // if we reached this point, then the image load succeeded
 // convert it to a png and store in conversions dir
 // 
-$targetName = NewImageName();
-$outputFileDir = GetConversionDir($targetName);
-$outputFilePath = GetConversionPath($targetName);
+$imageName = NewImageName();
+$outputFileDir = GetConversionDir($imageName);
+$outputFilePath = GetConversionPath($imageName);
 $command = "convert $tmpName $outputFileDir";
 $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 /*
     if (file_exists($outputFileDir) == FALSE)
     {
-        $targetName = StripSuffix($targetName);
-        $outputFileDir = GetConversionDir("$targetName-0$JPGSUFFIX");
+        $imageName = StripSuffix($imageName);
+        $outputFileDir = GetConversionDir("$imageName-0$JPGSUFFIX");
         RecordCommand("ConvertToJPG ANIM SEEN $outputFileDir");
     }
 */
@@ -63,7 +63,6 @@ if ($size > $MAX_FILE_SIZE)
     if (($width > $RESIZE_MAX_WIDTH) || ($height > $RESIZE_MAX_HEIGHT))
     {
 		$outputFileDir = ResizeImage($outputFileDir, $RESIZE_MAX_WIDTH, $RESIZE_MAX_HEIGHT, FALSE);
-		$targetName = basename($outputFileDir);
 		$outputFilePath = GetConversionPath($outputFileDir);
 		RecordCommand("LOADX RESIZE $size $width $height");
     }
@@ -124,7 +123,6 @@ else if ($regionCount >= 2) {
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
     RecordCommand("LOADX Region2 $command");
 }
-
 
 
 $stats = GetStatString($outputFileDir);

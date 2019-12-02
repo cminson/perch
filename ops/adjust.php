@@ -6,6 +6,10 @@ DisplayTitle('Adjust Image');
 DisplayFormStart();
 
 $arg = 'UP_CONTRAST';
+
+DisplayRegionPicker('Target Region','REGION');
+DisplayLineSep1();
+
 print "<table class=\"argTable\">\n";
 print("<tr>\n");
 

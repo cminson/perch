@@ -4,9 +4,9 @@ include '../common/common.inc';
 //if (CompleteWithNoAction()) return;
 
 $Arg = ($_POST['ARG1']);
-$inputFileDir = $_POST['CURRENTFILE'];
-$inputFileDir = "$BASE_DIR$inputFileDir";
+$Region = $_POST['REGION'];
 
+$inputFileDir = GetConversionDir($_POST['CURRENTIMAGE']);
 
 switch ($Arg)
 {
@@ -57,6 +57,16 @@ $outputFileDir = GetConversionDir($targetName);
 $outputFilePath = GetConversionPath($targetName);
 $command = "$command $inputFileDir $outputFileDir";
 $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+RecordCommand("ADJUST $Arg $command $outputFilePath");
+
+if ($Region != 'ALL') {
+
+    RecordCommand("Applying Region Operation").
+    $maskFileDir = GetConversionDir($Region);
+    $outputFileDir = ApplyRegionOperation($inputFileDir, $outputFileDir, $maskFileDir);
+    $outputFilePath = GetConversionPath($outputFileDir);
+}
+
 RecordCommand("FINAL $Arg $command $outputFilePath");
 
 RecordAndComplete($LastOperation,$outputFilePath,TRUE);
