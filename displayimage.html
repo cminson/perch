@@ -5,7 +5,7 @@
 <?php
 include './common/common.inc';
 
-$current = $_GET['CURRENTFILE'];
+$current = $_GET['CURRENTIMAGE'];
 $current = rawurldecode($current);
 RecordCommand("DISPLAYIMAGE: $current");
 $href = "$BASE_PATH$current";

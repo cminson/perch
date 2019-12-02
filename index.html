@@ -71,7 +71,7 @@ include "/var/www/perch/common/common.inc";
     <p>
     <a class="oplink" id="viewimage" target="_blank" onclick="viewCurrentImage()" href="">View Image</a>
     <br>
-    <img style="display: inline-block; border: none; height: 290px; margin-top:0px; margin-bottom:0px; cursor: crosshair" src="./resources/banners/banner01.jpg" alt="" id="ID_MAIN_IMAGE" onclick="getImageColorAtCurrentPoint(event)">
+    <img style="display: inline-block; border: none; height: 290px; margin-top:0px; margin-bottom:0px; cursor: crosshair" src="./resources/banners/banner01.jpg" alt="" id="ID_MAIN_IMAGE" onclick="viewCurrentImage()">
     <!-- END IMAGE AREA  -->
 
 
@@ -85,7 +85,7 @@ include "/var/www/perch/common/common.inc";
 <table style="display: inline-block; margin-bottom: 1px; margin-top: 0px">
     <tr>
     <td>
-        <img onclick="previousImage()" width="40" src="./resources/navs/nleft.jpg" alt="">
+        <img style="display: none" id="ID_PREVIOUS_IMAGE" onclick="previousImage()" width="40" src="./resources/navs/icon-previous.png" alt="">
     </td>
     <td>
         <a href="#home" onclick="chooseFile()">
@@ -96,9 +96,10 @@ include "/var/www/perch/common/common.inc";
 
     </td>
     <td>
-        <img onclick="nextImage()" width="40" src="./resources/navs/nright.jpg" alt="">
+        <img style="display: none" id="ID_NEXT_IMAGE" onclick="nextImage()" width="40" src="./resources/navs/icon-next.png" alt="">
     </td>
     </tr>
+
 </table>
 <!-- END LOAD BUTTONS -->
 
@@ -112,10 +113,9 @@ include "/var/www/perch/common/common.inc";
 <!-- START MAINCONTAINER  -->
 <!--
 Main container contains:
-    1) Hidden load area
-    2) A main slider - which contains:
-    a) An ops toc area
-    b) An ops form are
+    1) A main slider - which contains:
+        a) An ops toc area
+        b) An ops form area
 -->
 <div style="display: inline-block; margin-top: 0px" id="ID_MAIN_CONTAINER">
 
@@ -162,6 +162,7 @@ include $BASE_DIR."/ops/opcol3.php";
 <!-- END OP TOC -->
 
 <!-- START OP AREA -->
+<!-- This is where operation forms are displayed -->
 <div class="oparea" id="ID_OP_FORM"></div>
 <!-- END OP AREA -->
 

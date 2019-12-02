@@ -10,25 +10,12 @@ const BASE_PATH = "http://54.71.108.91";   // also set in common.inc
 const IMAGE_BUSY = BASE_PATH + "/resources/utils/busy.gif";
 const CONVERSIONS_DIR = "/CONVERSIONS/";
 
-var ListImageURLS = [];
-var ListImageStats = [];
+var ListImageURLS = [];  // list of all images in current session
+var ListImageStats = []; // and the parallel list of stats for this images
+var CurrentPosition = 0; // position of the current image being worked on
 
-var CurrentPosition = 0;
-var PreviousPosition = 0;
-var CurrentOp = "";
-var MaxPosition =  0;
-var HomePosition = 0;
-var MAXIMAGES = 100;
-var BaseDivId = "imagediv";
-var BaseImageId = "image";
-var BaseStatusId = "ID_IMAGE_STATS";
-var OpImage;
-var	SNDisplayed = 0;
 var	BusyDisplayed = 0;
 var HelpPageDisplayed = false;
-
-var Ias = null;
-var ImageAreaSelected = false;
 
 
 // the dimensions of the currently displayed image
@@ -37,10 +24,7 @@ var CurrentImageWidth = 1;
 var CurrentImageHeight = 1;
 
 
-
 /************************************************************/
-/* Local ANIM functions */
-var SelecteFrame = 1;
 function chooseFrameFile(frame)
 {
     var e;
@@ -65,7 +49,6 @@ function submitFrameFile()
     e  = document.getElementById(frame);
     e.src = IMAGE_BUSY;
 }
-
 
 function completeFrameLoad(imageList,text)
 {
@@ -95,7 +78,6 @@ function completeFrameLoad(imageList,text)
 			e.value = image;
 		}
 	}
-
 }
 
 function reportFrameLoadError(error)
@@ -112,17 +94,6 @@ var e,frame;
 
 	e = document.getElementById('ID_IMAGE_STATS');
 	e.innerHTML = error;
-}
-
-
-//
-// *******************************************
-//
-
-function test() 
-{
-    console.log('test');
-    window.location.href = "#home";
 }
 
 function chooseFile() 
@@ -153,15 +124,8 @@ function chooseFile()
 function submitFile() 
 {
     console.log('submitFile');
-    var e = document.getElementById('ID_LOAD_FORM');
-
-    if (e == null)
-    {
-        alert("Internal load error #2");
-		return;
-	}
-	e.submit();
-	executeLoad();
+    document.getElementById('ID_LOAD_FORM').submit();
+	displayBusyImage();
 }
 
 function updateview(img, selection)
@@ -193,26 +157,12 @@ function viewOpList(id)
 
 function hide(id)
 {
-    var e = document.getElementById(id);
-
-    if (e != null)
-        e.style.display = 'none';
-    return;
+    document.getElementById(id).style.display = 'none';
 }
 
 function show(id)
 {
-    var e = document.getElementById(id);
-    if (e != null)
-        e.style.display = 'block';
-    return;
-}
-
-function setElement(id,v)
-{
-	var e = document.getElementById(id);
-    if (e != null)
-        e.value = v;
+    document.getElementById(id).style.display = 'block';
 }
 
 //
@@ -220,13 +170,13 @@ function setElement(id,v)
 //
 
 
-
-
 function viewCurrentImage()
 {
 	var imageDir = getCurrentImageDir();
-
-	document.getElementById('viewimage').href = BASE_PATH+"/displayimage.html?CURRENTFILE="+imageDir;
+    if (imageDir != null) 
+    {
+	    document.getElementById('viewimage').href = BASE_PATH+"/displayimage.html?CURRENTIMAGE="+imageDir;
+    }
 }
 
 function returnToMainArea()
@@ -282,8 +232,6 @@ function selectArg(selection)
 */
 
 
-
-
 function displayOpForm()
 {
 var e;
@@ -303,38 +251,16 @@ function displayCurrentImage()
 	var imageURL = ListImageURLS[CurrentPosition];
 	var stats = ListImageStats[CurrentPosition];
 
-	// set the this displayed image as the one to share (should user hit share button)
-	//imageURL = BASE_PATH + imageURL;
-    /*
-    $("#share_container").jsSocials({
-        url : imageURL,
-    	shares: ["email", "twitter", "facebook", "reddit", "linkedin"],
-    });
-    */
-
-	// now display image and stats
-    var e_opimage = document.getElementById('ID_MAIN_IMAGE');
-    var e_stats = document.getElementById('ID_IMAGE_STATS');
-
 	stats = "[" + (CurrentPosition+1) + "/" + ListImageStats.length + "] " + stats;
-    /*
-	stats = "[" + (CurrentPosition+1) + "/" + ListImageStats.length + "]";
-
-	var b = "&nbsp;&nbsp;<button id=\"share\" onclick=\"socialShare(event)\">share</button>";
-	stats = stats + b;
-    */
-
     console.log('displayCurrentImage: ' + imageURL);
-	e_opimage.src = imageURL;
-    e_opimage.onload = function() {
+    document.getElementById('ID_MAIN_IMAGE').onload = function() {
 
-		setHiddenImage(e_opimage);
+		setHiddenImage(document.getElementById('ID_MAIN_IMAGE'));
     };
-
-	e_stats.innerHTML = stats;
+	document.getElementById('ID_MAIN_IMAGE').src = imageURL;
+	document.getElementById('ID_IMAGE_STATS').innerHTML = stats;
 	setDownloadImageLink(imageURL);
 }
-
 
 function hideBusyImage()
 {
@@ -361,7 +287,9 @@ function getCurrentImageURL()
 
 function getCurrentImageDir()
 {
+    console.log('getCurrentImageDir');
 	var imageURL = getCurrentImageURL();
+    console.log('imageURL', imageURL);
     if (imageURL == null) return null;
 
     var imageArray = imageURL.split("/");
@@ -406,7 +334,7 @@ function setHiddenImage(image)
 
 //
 // get the color at this event point.
-// images are stored both in the displayable opimage area as 
+// images are stored both in the displayable ID_MAIN_IMAGE area as 
 // well as in a hidden canvas.  we sample the point at the canvas image,
 // taking into account scaling of the images
 //
@@ -467,7 +395,6 @@ function getImageColorAtCurrentPoint(event)
 
 function setCurrentStatus(image,text)
 {
-	var id = BaseStatusId+CurrentPosition;
     var e = document.getElementById('opstatus');
     e.innerHTML = text;
 }
@@ -475,9 +402,7 @@ function setCurrentStatus(image,text)
 
 
 // 
-// add image to the end of the array of possible images (max=MAXIMAGES).
-// if reached end of the array, then loop back and overwrite images 
-// beginning at the first (1) position.
+// add image to the end of the array of possible images 
 //
 function addImage(imageURL,text)
 {
@@ -487,6 +412,12 @@ function addImage(imageURL,text)
 	ListImageStats.push(text);
 	CurrentPosition = ListImageURLS.length - 1;
 	displayCurrentImage();
+
+    if (ListImageURLS.length > 1) 
+    {
+        show('ID_PREVIOUS_IMAGE');
+        show('ID_NEXT_IMAGE');
+    }
 
 }
 
@@ -507,23 +438,8 @@ function previousImage()
 
 function homeImage()
 {
-	if (HomePosition >= ListImageURLS.length) HomePosition = 0;
-	CurrentPosition = HomePosition;
+	CurrentPosition = 0;
 	displayCurrentImage();
-}
-
-function setHomeImage(imageURL,position)
-{
-	show('ID_HOME_IMAGE');
-    var e = document.getElementById('ID_HOME_IMAGE');
-	HomePosition = position;
-
-	if (imageURL == null)
-	{
-		imageURL = BASE_PATH+"/wimages/tools/blank.jpg";
-		HomePosition = 0;
-	}
-	e.src = imageURL;
 }
 
 function enableConvertButton()
@@ -538,14 +454,6 @@ function disableConvertButton()
     if (e != null) e.disabled = true;
 }
 
-function executeLoad()
-{
-    console.log("executeLoad");
-	show('opimage');
-
-    OpImage = getCurrentImageURL();
-	displayBusyImage();
-}
 
 function completeWithNoAction()
 {
@@ -577,7 +485,6 @@ function completeImageLoad(image,text)
     ListImageURLS = [];
     ListImageStats = [];
     CurrentPosition = 0;
-    PreviousPosition = 0;
     NextPosition = 0;
 
 	//var relImage = image.replace(BASE_PATH,".");
@@ -588,7 +495,10 @@ function completeImageLoad(image,text)
 	//addImage(relImage,text);
 	addImage(image,text);
 
-	setHomeImage(image,CurrentPosition);
+    document.getElementById('ID_HOME_IMAGE').src = image;
+
+    hide('ID_PREVIOUS_IMAGE');
+    hide('ID_NEXT_IMAGE');
 
     //document.getElementById('ID_OBJECT_VALUES').innerHTML = segmentInfo;
 }
@@ -635,11 +545,6 @@ function backgroundSubmitOpForm()
 
     // execute the fom POSTR
     document.getElementById('ID_OP_SUBMITFORM').submit();
-}
-
-function test()
-{
-    console.log('test');
 }
 
 //
@@ -721,80 +626,29 @@ function getajaxRequest()
 
 function displayOp(op)
 {
-    var ajaxRequest = getajaxRequest();
-
-    CurrentOp = op;
-    ajaxRequest.onreadystatechange = function()
-    {
-        if(ajaxRequest.readyState == 4)
-        {
-            var response=ajaxRequest.responseText;
-			var e;
-            if (response.length > 10)
-            {
-			document.getElementById('ID_OP_FORM').innerHTML = response;
-			displayOpForm();
-            show('ID_RETURN_TO_MAINPAGE');
-            }
-        }
-	}
-
 	var imageDir = getCurrentImageDir();
+	var homeImageDir = ListImageURLS[0];
     if (imageDir != null) 
     {
-	    var	params="CURRENTFILE="+imageDir;
-	    ajaxRequest.open("POST",op,true);
-	    ajaxRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-	    ajaxRequest.send(params);
+        console.log("POST: ", imageDir, op);
+        $.post(op, 
+            {
+                CURRENTIMAGE: imageDir, 
+                HOMEIMAGE: homeImageDir
+            },
+            function(data, status) 
+            {
+                if (data.length > 10)
+                {
+			        document.getElementById('ID_OP_FORM').innerHTML = data;
+			        displayOpForm();
+                    show('ID_RETURN_TO_MAINPAGE');
+                }
+            }
+        
+        );
     }
 }
-
-function execSimpleOp(op,target)
-{
-	var image;
-	var imageArray;
-	var l;
-
-    if (ListImageURLS.length == 0)
-        return;
-
-    var ajaxRequest = getajaxRequest();
-
-    ajaxRequest.onreadystatechange = function()
-    {
-        if(ajaxRequest.readyState == 4)
-        {
-			var image;
-			var text;
-			var a;
-           	var response = ajaxRequest.responseText;
-		
-			// indicating op was cancelled prior to completion
-			if (BusyDisplayed == 0)
-			{
-				hideBusyImage();
-				return;
-			}
-			a = response.split("?");
-			image = a[0];
-			text = a[1];
-			
-			addImage(image,text);
-        }
-	}
-
-	var imageDir = getCurrentImageDir();
-	if (imageDir != null)	
-	{
-		displayBusyImage();
-        console.log(imageDir);
-		var params="CURRENTFILE="+imageDir+"&TGT="+target;
-		ajaxRequest.open("POST",op,true);
-		ajaxRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-		ajaxRequest.send(params);
-	}
-}
-
 
 function selectTableItem(id,path,file,status)
 {
@@ -859,15 +713,6 @@ function toggleHelpPage()
 
 }
 
-
-
-function test1(setting, name)
-{
-    console.log('test1');
-    console.log(setting, name);
-    pickerPopup302(setting,name);
-
-}
 
     
 

@@ -34,10 +34,17 @@ $MAX_FILE_SIZE_PRINTABLE = "10.0Mb";  //For output in help messages
 $RESIZE_MAX_WIDTH = 800;  // Resize target width when resizing overly large files
 $RESIZE_MAX_HEIGHT= 800;  // Resize target height when resizing overly large files
 
-$current = getGETVar('CURRENTFILE');
 $RecordCommandOn=TRUE;
+if ((isset($_POST['CURRENTIMAGE'])) == TRUE)
+{
+    $CurrentImage = $_POST['CURRENTIMAGE'];
+    $HomeImage = $_POST['HOMEIMAGE'];
+    RecordCommand("Home: $HomeImage Current: $CurrentImage");
+}
+
 
 $IMAGE_SUFFIX = '.png';
+
 
 
 /////////////////////////////////////////////////////
@@ -62,36 +69,37 @@ function StripSuffix($name)
 	return $newName;
 }
 
+
 function ApplyRegionOperation($originalFileDir, $convertedFileDir, $maskFileDir)
 {
-    $targetName = NewTMPImageName($convertedFileDir);
-    $cutterFileDir = GetConversionDir($targetName);
+
+    $imageName = NewTMPImageName();
+    $cutterFileDir = GetConversionDir($imageName);
     $command = "convert -transparent white -fuzz 40% $maskFileDir $cutterFileDir";
     RecordCommand($command);
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 
-    $targetName = NewTMPImageName($convertedFileDir);
-    $tmp1FileDir = GetConversionDir($targetName);
+    $imageName = NewTMPImageName();
+    $tmp1FileDir = GetConversionDir($imageName);
     $command = "composite -geometry +0+0 $cutterFileDir $convertedFileDir $tmp1FileDir";
     RecordCommand($command);
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 
-    $targetName = NewTMPImageName();
-    $tmp2FileDir = GetConversionDir($targetName);
+    $imageName = NewTMPImageName();
+    $tmp2FileDir = GetConversionDir($imageName);
     $command = "convert -transparent black -fuzz 40% $tmp1FileDir $tmp2FileDir";
     RecordCommand($command);
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 
-    $targetName = NewImageName();
-    $resultFileDir = GetConversionDir($targetName);
+    $imageName = NewImageName();
+    $resultFileDir = GetConversionDir($imageName);
     $command = "composite -geometry +0+0 $tmp2FileDir $originalFileDir $resultFileDir";
     RecordCommand($command);
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 
     return $resultFileDir;
-    //return $originalFileDir;
-
 }
+
 
 function NewImageName()
 {
@@ -106,6 +114,7 @@ function NewTMPImageName()
 {
     return 'x'.NewImageName();
 }
+
 
 function NewRegionMaskName($imageDir, $objectName, $score)
 {
@@ -142,21 +151,26 @@ function RecordCommand($command)
 	}
 }
 
-//
-// for the given image, retrieve all region mask
-// files associated with it
-//
-function GetImageRegions($imageDir)
-{
-    global $CONVERSION_DIR;
 
-    $matchName = explode('.', basename($imageDir))[0];
+//
+// retrieve all region mask files associated with given file
+//
+function GetImageRegions($outputFileDir)
+{
+    global $CONVERSION_DIR, $HomeImage;
+
+    $matchName = explode('.', basename($outputFileDir))[0];
     RecordCommand("GetImageRegions $matchName");
     return array_reverse((glob($CONVERSION_DIR.'m'.$matchName.'*')));
 }
 
-function DisplayRegionPicker($text, $name, $regionList)
+
+function DisplayRegionPicker($text, $name)
 {
+    global $CONVERSION_DIR, $HomeImage;
+
+    $regionList = GetImageRegions($HomeImage);
+
 	print  $text;
 	DisplaySep0();
 	print  "<select name=\"$name\">\n";
@@ -170,27 +184,6 @@ function DisplayRegionPicker($text, $name, $regionList)
     }
 	print  "</select>\n";
 
-}
-
-
-function ConvertToJPG($inputFileDir)
-{
-global $CONVERT_DIR;
-global $JPGSUFFIX;
-
-    $targetName = NewImageName();
-    $outputFileDir = "$CONVERT_DIR$targetName";
-    $command = "convert $inputFileDir $outputFileDir";
-    //RecordCommand("DEV ConvertToJPG $command");
-    //
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-    if (file_exists($outputFileDir) == FALSE)
-    {
-        $targetName = StripSuffix($targetName);
-        $outputFileDir = "$CONVERT_DIR$targetName-0$JPGSUFFIX";
-        //RecordCommand("ConvertToJPG ANIM SEEN $outputFileDir");
-    }
-    return $outputFileDir;
 }
 
 
@@ -240,6 +233,7 @@ function ReportError($error)
 	exit(0);
 }
 
+
 function RecordAndComplete($op,$outputFilePath,$simple)
 {
 global $LastOperation;
@@ -254,11 +248,6 @@ global $LastOperation;
 	else
 	{
 		// no valid output image, so output an error banner instead
-	    RecordCommand("ERROR - File Not Found: $outputFileDir");
-        //CJM DEV
-		$inputFileDir = "/var/www//ic/wimages/messages/error1.png";
-		$outputFileDir = ConvertToJPG($inputFileDir);
-		$outputFilePath = GetConversionPath($outputFileDir);
 		$stats = "Error";
 		RecordCommand("RecordAndComplete: Error Image = $outputFilePath");
 	}
@@ -326,6 +315,7 @@ function DisplayCurrentEventJSImage($current)
 		print "</center>\n";
 	}
 }
+
 
 function DisplayOp($category, $text, $file, $target)
 {
@@ -454,46 +444,21 @@ function getBaseImage($inputFileDir)
 {
 global $PNGSUFFIX;
 
-    $targetName = basename($inputFileDir);
-    $targetName = StripSuffix($targetName);
-    //RecordCommand("target Image: $targetName");
-    $targetName = TMPPNG();
-    $outputFileDir = GetConversionDir($targetName);
+    $imageName = basename($inputFileDir);
+    $imageName = StripSuffix($imageName);
+    //RecordCommand("target Image: $imageName");
+    $imageName = TMPPNG();
+    $outputFileDir = GetConversionDir($imageName);
     $command = "convert $inputFileDir $outputFileDir";
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 
-    $baseFile = "$targetName-0$PNGSUFFIX";
+    $baseFile = "$imageName-0$PNGSUFFIX";
 
     $baseFileDir = GetConversionDir($baseFile);
     //RecordCommand("Base Image: $baseFileDir ");
     if (file_exists($baseFileDir) == TRUE)
         return $baseFile;
     return FALSE;
-}
-
-
-
-function getGETVar($var)
-{
-    $value = '';
-
-    if ((isset($_GET[$var])) == TRUE)
-    {
-        $value = $_GET[$var];
-    }
-    return $value;
-}
-
-
-function getPOSTVar($var)
-{
-    $value = '';
-
-    if ((isset($_POST[$var])) == TRUE)
-    {
-        $value = $_POST[$var];
-    }
-    return $value;
 }
 
 
@@ -537,11 +502,10 @@ function GetColorCount($imageDir)
 }
 
 
-
 function ResizeImage($imageDir, $width, $height, $exactFit)
 {
-    $targetName = NewImageName();
-    $outputFileDir = GetConversionDir($targetName);
+    $imageName = NewImageName();
+    $outputFileDir = GetConversionDir($imageName);
     if ($exactFit == TRUE)
         $command = "convert -resize $width"."x"."$height"."\!"." $imageDir $outputFileDir";
     else
@@ -555,9 +519,9 @@ function ResizeImage($imageDir, $width, $height, $exactFit)
 function ResizeTMPImage($imageDir, $width, $height, $exactFit)
 {
 
-    $targetName = basename($imageDir);
-    $targetName = TMPName($targetName);
-    $outputFileDir = GetConversionDir($targetName);
+    $imageName = basename($imageDir);
+    $imageName = TMPName($imageName);
+    $outputFileDir = GetConversionDir($imageName);
     if ($exactFit == TRUE)
         $command = "convert -resize $width"."x"."$height"."\!"." $imageDir $outputFileDir";
     else
@@ -569,13 +533,12 @@ function ResizeTMPImage($imageDir, $width, $height, $exactFit)
 }
 
 
-
 function DisplayCurrentClickableImageReturnMain($current,$returnToMainPage)
 {
 	global $WIDTH_IMAGE;
 
 	print "<center>\n";
-	print "<A class=navlink HREF=\"$BASE_PATH/index.html?CURRENTFILE=$current\">$returnToMainPage</A>\n";
+	print "<A class=navlink HREF=\"$BASE_PATH/index.html?CURRENTIMAGE=$current\">$returnToMainPage</A>\n";
 
 	print "<br><p>";
 	print "<table>\n";
@@ -608,22 +571,23 @@ function DisplayCurrentClickableImageReturnMain($current,$returnToMainPage)
 	print "</center>";
 }
 
+
 // was 500k and 450
 function CheckFileSize($inputFileDir)
 {
 
-	$targetName = basename($inputFileDir);
+	$imageName = basename($inputFileDir);
 	$outputFilePath = GetConversionPath($inputFileDir);
 
     GetImageAttributes($inputFileDir,$width,$height,$size);
     RecordCommand("CHECKFILESIZE PRE REDUCE $size ");
     if ($size > 800000)
     {
-        $targetName = NewImageName();
+        $imageName = NewImageName();
 		if (($width > 650) || ($height > 650))
 		{
-			$outputFileDir = GetConversionDir($targetName);
-			$outputFilePath = GetConversionPath($targetName);
+			$outputFileDir = GetConversionDir($imageName);
+			$outputFilePath = GetConversionPath($imageName);
 
 			$command = "convert -resize 650x650 $inputFileDir $outputFileDir";
 			$execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
@@ -632,72 +596,6 @@ function CheckFileSize($inputFileDir)
     }
 	return $outputFilePath;
 }
-
-
-function DisplaySelectionTable($id,$dir,$path,$maxcols,$width,$selwidth,$displaynames,$default)
-{
-global $X_SELECTED;
-
-
-	$handle = opendir($dir);
-	$files = array();
-	while ($file = readdir($handle))
-	{
-		if (($file == '.') || ($file == '..'))
-			continue;
-     $files[] = $file;
-	}
-	closedir($handle);
-	sort($files);
-
-	print  "<center>\n";
-	print  "<table class=\"selections\" cellspacing=5 cellpadding=5>";
-	$i = $j = 0;
-	$num = 1;
-	$pdefault = 1;
-	foreach ($files as $file)
-	{
-		$j++;
-		$pfile = str_ireplace(".jpg","",$file);
-		$pfile = str_ireplace(".png","",$pfile);
-		$pfile = str_ireplace(".gif","",$pfile);
-		if ($displaynames == true)
-		{
-			$psel = "$j $pfile";
-			$psel = str_replace(".ttf","",$psel);
-		}
-		else
-			$psel = $j;
-
-		if ($default == $file)
-			$pdefault = $j;
-
-		$psel2 = "test";
-		if ($i == 0)
-			print  "<tr>\n";
-		//print  "<td class=selection onclick=\"alert('$file'+'$psel')\">\n";
-		print  "<td class=selection onclick=\"selectTableItem('$id','$path','$file','$psel')\">\n";
-		print  "<img border=0 align=center src=$path$file alt=$file width=\"$width\">\n";
-		print  "<br><center>$psel</center>\n";
-		print  "</td>\n";
-		$i++;
-		if ($i == $maxcols)
-		{
-			print  "</tr>\n";
-			$i = 0;
-		}
-		$num++;
-	}
-	print  "</table>\n";
-	print  "<p><br>\n";
-	
-	print  "<input type=\"hidden\" name=\"$id\" id=\"$id\" value=\"$default\">\n";
-	print  "<img id=\"IMAGE\" border=\"0\" align=\"center\" src=\"$path$default\" alt=\"$file\" width=\"$selwidth\">\n";
-	print  "<div id=\"STATUS\" >\n$pdefault</div>\n";
-	print  "$X_SELECTED\n";
-	print  "</center>\n";
-
-} 
 
 function DisplayConvertButton()
 {
@@ -736,6 +634,7 @@ function DisplayColorSelector($text, $setting, $name, $transparent)
 	print "</select>\n";
 }
 
+
 function DisplayColorPicker($text,$setting,$name,$default)
 {
 	print "<a class=\"navlink\" href=\"javascript: onclick=pickerPopup302('$setting','$name');\">$text</a>\n";
@@ -758,22 +657,6 @@ function DisplayLoopPicker($text,$setting)
 	print  "</select>\n";
 }
 
-function DisplaySpeedPicker($text,$setting)
-{
-	print  "$text\n";
-	DisplaySep0();
-	print  "<select name=\"$setting\">\n";
-	print  "<option value=50 SELECTED>---\n";
-	print  "<option value=300>3 Seconds\n";
-	print  "<option value=200>2 Seconds\n";
-	print  "<option value=100>1 Second\n";
-	print  "<option value=50>1/2 Second\n";
-	print  "<option value=25>1/4 Second\n";
-	print  "<option value=20>1/5 Second\n";
-	print  "<option value=10>1/10 Second\n";
-	//print  "<option value=1>1/100 Second\n";
-	print  "</select>\n";
-}
 
 function DisplayNumPicker($text,$setting,$min,$max,$selected)
 {
@@ -792,6 +675,7 @@ function DisplayNumPicker($text,$setting,$min,$max,$selected)
 	}
 	print  "</select>\n";
 }
+
 
 function DisplayFileNumPicker($text,$setting,$files,$selected)
 {
@@ -812,12 +696,14 @@ function DisplayFileNumPicker($text,$setting,$files,$selected)
 	print  "</select>\n";
 }
 
+
 function DisplayFilePicker($text,$setting)
 {
     print  "$text\n";
     DisplaySep0();
 	print  "<input size=\"50\" maxLength=\"50\" type=\"FILE\" name=\"FILENAME\">\n";
 }
+
 
 function DisplayCheckBox($text,$setting,$checked)
 {
@@ -829,10 +715,12 @@ function DisplayCheckBox($text,$setting,$checked)
 		print  "<input type=\"checkbox\" name=\"$setting\">\n";
 }
 
+
 function DisplaySep0()
 {
 	print "&nbsp;";
 }
+
 
 function DisplaySep4()
 {
@@ -842,24 +730,28 @@ function DisplaySep4()
 	print "&nbsp;";
 }
 
+
 function DisplaySep1()
 {
 	print  "&nbsp;&nbsp;&nbsp;&nbsp;\n";
 }
+
 
 function DisplayLineSep0()
 {
 	print  "<br><p>\n";
 }
 
+
 function DisplayLineSep1()
 {
 	print  "<br><p><br>\n";
 }
 
+
 function DisplayFormStart()
 {
-    global $DIR_OPS;
+    global $DIR_OPS, $CurrentImage, $HomeImage;
 
 	$op = $_SERVER['PHP_SELF'];
 	$op = basename($op);
@@ -870,20 +762,22 @@ function DisplayFormStart()
 	print "<center>\n";
     print  "<form id=\"ID_OP_SUBMITFORM\" enctype=\"multipart/form-data\" action=\"$op\" method=\"post\" target=\"upload_target\">\n";
 
-	$current = $_POST['CURRENTFILE'];
-	print  "<input type=\"hidden\" id=\"current\" name=\"CURRENTFILE\" value=\"$current\">\n";
+	print  "<input type=\"hidden\" id=\"current\" name=\"CURRENTIMAGE\" value=\"$CurrentImage\">\n";
+	print  "<input type=\"hidden\" id=\"home\" name=\"HOMEIMAGE\" value=\"$HomeImage\">\n";
 	print  "<input type=\"hidden\" id=\"ARG1\" name = \"ARG1\" value=\"NA\">\n";
 	print  "<input type=\"hidden\" id=\"ARG2\" value=\"NA\">\n";
 
-	RecordCommand("DISPLAY FORMSTART CURRENT=$current");
+	RecordCommand("DISPLAY FORMSTART CURRENT=$CurrentImage");
 	print "\n";
 }
+
 
 function DisplayFormEnd()
 {
 	print sprintf("</form>");
 	print sprintf("</center>");
 }
+
 
 function DisplayTitle($title)
 {
@@ -892,10 +786,12 @@ function DisplayTitle($title)
     print "<center><h2 onclick=returnToMainArea()>$title</h2></center>";
 }
 
+
 function DisplayLoadTitle($title)
 {
-print "<center><h2 onclick=\"toggleLoadDisplay()\">$title</h2></center>";
+    print "<center><h2 onclick=\"toggleLoadDisplay()\">$title</h2></center>";
 }
+
 
 function DisplayTextInput($text, $name, $value, $size)
 {
@@ -903,6 +799,7 @@ function DisplayTextInput($text, $name, $value, $size)
 	DisplaySep0();
 	print "<input size=\"$size\" MaxLength=\"$size\" Length=\"$size\" value=\"$value\" type=\"text\" name=\"$name\">\n";
 }
+
 
 function DisplayFontPicker($text, $default, $name)
 {
@@ -937,6 +834,7 @@ global $DIR_FONTS;
 	print "</select>\n";
 }
 
+
 function DisplayFontSizePicker($text, $name)
 {
 	print $text;
@@ -966,6 +864,7 @@ function DisplayFontSizePicker($text, $name)
 	print "</select>\n";
 }
 
+
 function DisplayFontSizePicker2($text, $name)
 {
 	print $text;
@@ -987,6 +886,7 @@ function DisplayFontSizePicker2($text, $name)
 	print "<option>150\n";
 	print "</select>\n";
 }
+
 
 function DisplayPositionPicker($text, $name, $append)
 {
@@ -1026,8 +926,6 @@ function DisplayBlendPositionPicker($text, $name)
 
 	print "</select>\n";
 }
-
-
 
 
 function DisplayFuzzPicker($text, $name, $default)
@@ -1138,6 +1036,7 @@ function DisplaySizePicker($text, $name)
 	print "</select>\n";
 }
 
+
 function DisplayDegrees($text, $name)
 {
 	print $text;
@@ -1154,7 +1053,6 @@ function DisplayDegrees($text, $name)
 }
 
 
-
 function DisplayOrientationPicker($text, $name)
 {
 	print $text;
@@ -1164,6 +1062,7 @@ function DisplayOrientationPicker($text, $name)
 	print "<option value=\"portrait\">Portrait\n";
 	print "</select>\n";
 }
+
 
 function DisplayBorderPicker($text, $name)
 {
@@ -1324,9 +1223,6 @@ function TestDisplaySelectionPicker($labels, $args)
 }
 
 
-
-
-
 function DisplayGenStringPicker($text,$id,$values,$strings,$default)
 {
 
@@ -1348,103 +1244,19 @@ function DisplayGenStringPicker($text,$id,$values,$strings,$default)
 }
 
 
-function DisplayAnimCreateTable($current,$max_anim)
-{
-global $MAX_ANIM_FRAME_SIZE;
-
-	print "<center>\n";
-    print "<input type=\"hidden\" name=\"ANIMATION\" value=\"FALSE\">\n";
-    print "<input type=\"hidden\" name=\"CURRENTFILE\" value=\"$current\">\n";
-	print "<table class=\"selections\" cellspacing=10 cellpadding=10>\n";
-	$i = 0;
-	$col = 1;
-
-
-	for ($i = 0; $i < $max_anim; $i++)
-	{
-		if ($col == 1)
-		{
-			print "<tr>\n";
-		}
-		print "<td align=center>\n";
-
-		if ($i == 0)
-		{
-			print "1\n";
-			print "<br>\n";
-			print "<img src=\"$current\" width=\"50\" height=\"50\" alt=\"\">\n";
-		}
-		else
-		{
-			$j = $i + 1;
-			print "$j\n";
-			print "<br>\n";
-			print "<input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"$MAX_ANIM_FRAME_SIZE\">\n";
-			print "<input class=selection size=40 maxLength=80 type=\"FILE\" name=\"FILENAME$j\">\n";
-
-		}
-		print "</td>\n";
-
-
-		if ($col == 3)
-		{
-			print "</tr>\n";
-			$col = 0;
-		}
-		$col++;
-	}
-	print "</table>\n";
-
-}
-
-
-function DisplayAnimInputList($current,$max_anim)
-{
-global $MAX_ANIM_FRAME_SIZE;
-
-	print "<center>\n";
-    print "<input type=\"hidden\" name=\"ANIMATION\" value=\"FALSE\">\n";
-    print "<input type=\"hidden\" name=\"CURRENTFILE\" value=\"$current\">\n";
-	$i = 0;
-
-	for ($i = 0; $i < $max_anim; $i++)
-	{
-		if ($i == 0)
-		{
-			print "1:\n";
-			if (strlen($current) > 20)
-				print "<img src=\"$current\" width=\"50\" height=\"50\" alt=\"\">\n";
-			else
-				print "<input class=selection size=40 maxLength=80 type=\"FILE\" name=\"FILENAME$j\">\n";
-		}
-		else
-		{
-			$j = $i + 1;
-			print "$j\n";
-			DisplaySep1();
-			print "<input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"$MAX_ANIM_FRAME_SIZE\">\n";
-			print "<input class=selection size=40 maxLength=80 type=\"FILE\" name=\"FILENAME$j\">\n";
-
-		}
-		print "<br><p>\n";
-	}
-
-}
-
-
 function DisplayHiddenField($id)
 {
 	print  "<input type=\"hidden\" name=\"$id\" id=\"$id\" value=\"\">";
 }
 
+
 function DisplayFileInput($text)
 {
-
-
 	print  "$text\n";
 	print  "<input type=hidden name=MAX_FILE_SIZE value=$MAX_FILE_SIZE>";
 	print  "<input size=$XINPUTWIDTH maxLength=280 type=\"FILE\" name=\"FILENAME\">";
 }
+
 
 function DisplayReadOnlyText($text,$name,$size,$default)
 {
@@ -1477,63 +1289,6 @@ global $X_SLOWNOTE;
 
 	print  "<center><P class=\"mild1\">$text</P></center>\n";
 }
-
-
-
-
-
-function DisplayCreateTable($current,$max_anim)
-{
-global $MAX_ANIM_FRAME_SIZE;
-
-    print  "<center>\n";
-    print  "<input type=\"hidden\" name=\"ANIMATION\" value=\"FALSE\">\n";
-    print  "<input type=\"hidden\" name=\"CURRENTFILE\" value=\"$current\">\n";
-    print  "<table class=\"selections\" cellspacing=10 cellpadding=10>\n";
-    $i = 0;
-    $col = 1;
-
-
-    for ($i = 0; $i < $max_anim; $i++)
-    {
-        if ($col == 1)
-        {
-            print  "<tr>\n";
-        }
-        print  "<td align=center>\n";
-
-        if ($i == 0)
-        {
-            print  "1\n";
-            print  "<br>\n";
-			if (strlen($current) > 20)
-			print  "<img src=\"$current\" width=\"50\" height=\"50\" alt=\"\">\n";
-			else
-            print  "<input class=selection size=40 maxLength=80 type=\"FILE\" id=\"FILENAME$j\" name=\"FILENAME$j\">\n";
-        }
-        else
-        {
-            $j = $i + 1;
-            print  "$j\n";
-            print  "<br>\n";
-            print  "<input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"$MAX_ANIM_FRAME_SIZE\">\n";
-            print  "<input class=selection size=40 maxLength=60 type=\"FILE\" id=\"FILENAME$j\" name=\"FILENAME$j\">\n";
-
-        }
-        print  "</td>\n";
-
-
-        if ($col == 2)
-        {
-            print  "</tr>\n";
-            $col = 0;
-        }
-        $col++;
-    }
-    print  "</table>\n";
-
-}
-
 
 
 function DisplayDivColorPicker()
@@ -1594,11 +1349,11 @@ global $BASE_PATH;
 
 function CompleteWithNoAction()
 {
+    global $CurrentImage;
 
-	$current = $_POST['CURRENTFILE'];
-	if (strlen($current) < 3)
+	if (strlen($CurrentImage) < 3)
 	{
-        RecordCommand($current);
+        RecordCommand($CurrentImage);
         echo '<html><head><title>-</title></head><body>';
         echo '<script language="JavaScript" type="text/javascript">'."\n";
         echo "parent.completeWithNoAction();";
@@ -1608,74 +1363,10 @@ function CompleteWithNoAction()
 	return FALSE;
 }
 
-function DisplayImageSelectionTable($id,$dir,$path,$maxcols,$width,$default)
-{
-global $X_SELECTED;
-
-
-    $handle = opendir($dir);
-    $files = array();
-    while ($file = readdir($handle))
-    {
-        if (($file == '.') || ($file == '..'))
-            continue;
-     $files[] = $file;
-    }
-    closedir($handle);
-    sort($files);
-
-	$original = "$path"."00.jpg";
-
-    print  "<center>\n";
-
-    print  "<table class=\"selections\" cellspacing=5 cellpadding=5>";
-    $i = $j = 0;
-    $num = 1;
-    $pdefault = 1;
-    foreach ($files as $file)
-    {
-		if (strstr($file,"00") != FALSE)
-			continue;
-        $j++;
-        $psel = $j;
-
-        if ($default == $file)
-            $pdefault = $j;
-
-        if ($i == 0)
-            print  "<tr>\n";
-        print  "<td class=selection onclick=\"selectTableItem('$id','$path','$file','$psel')\">\n";
-        print  "<img border=0 align=center src=$path$file alt=$file width=\"$width\">\n";
-        print  "<br><center>$psel</center>\n";
-        print  "</td>\n";
-        $i++;
-        if ($i == $maxcols)
-        {
-            print  "</tr>\n";
-            $i = 0;
-        }
-        $num++;
-    }
-    print  "</table>\n";
-    print  "<p><br>\n";
-
-    print  "<input type=\"hidden\" name=\"$id\" id=\"$id\" value=\"$default\">\n";
-    print  "<table class=\"selections\" cellspacing=5 cellpadding=5>";
-	print "<tr>\n";
-	print "<td><img border=0 src=$original width=$width></td>\n";
-	print "<td><img border=0 src=\"../wimages/arrows/rightarrow1.gif\" width=50></td>\n";
-    print  "<td><img id=\"IMAGE\" border=\"0\" align=\"center\" src=\"$path$default\" alt=\"$file\" width=\"$width\"></td>\n";
-	print "</tr>\n";
-    print  "</table>\n";
-    print  "<div id=\"STATUS\" >\n$pdefault</div>\n";
-	print "<br>\n";
-    print  "</center>\n";
-
-}
 
 function GetConversionPath($path)
 {
-global $CONVERSION_PATH;
+    global $CONVERSION_PATH;
 
     $terms = explode("/",$path);
     $count = count($terms);
@@ -1683,9 +1374,10 @@ global $CONVERSION_PATH;
     return $path;
 }
 
+
 function GetConversionDir($path)
 {
-global $CONVERSION_DIR;
+    global $CONVERSION_DIR;
 
     $terms = explode("/",$path);
     $count = count($terms);
