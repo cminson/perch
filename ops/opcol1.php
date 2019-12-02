@@ -2,7 +2,6 @@
 print "<table class=\"ops\">\n";
 #print "<caption class=\"ops\">Convert</caption>\n";
 DisplayOpButton("Adjust","adjust.php");
-DisplayOpButton("Format","format.php");
 DisplayOpButton("Resize","resize.php");
 DisplayOpButton("Trim","trim.php");
 DisplayOpButton("Rotate","rotate.php");

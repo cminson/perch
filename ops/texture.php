@@ -1,8 +1,7 @@
 <?php
 include '../common/common.inc';
 
-$current = $_POST['CURRENTFILE'];
-$regionList = GetImageRegions($current);
+$regionList = GetImageRegions();
 
 DisplayTitle('Reformat: Change Image Format');
 DisplayFormStart();

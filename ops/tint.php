@@ -3,10 +3,8 @@ include '../common/common.inc';
 
 $Title = 'Tint';
 
-$current = $_POST['CURRENTFILE'];
-
 RecordCommand("TINT REGION $current");
-$regionList = GetImageRegions($current);
+$regionList = GetImageRegions();
 
 DisplayTitle($Title);
 DisplayFormStart();

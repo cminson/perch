@@ -91,12 +91,15 @@ if __name__ == '__main__':
     masks = result['masks']
     masks = masks.astype(np.uint8)
     scores = result['scores']
+    rois = result['rois']
 
     for index, class_id in enumerate(class_ids):
 
         object_name = COCO_CLASS_NAMES[class_id].replace(' ', '_')
         score = scores[index]
         score = int(score * 100)
+        roi = rois[index]
+        print('ROI:', type(roi), roi)
 
         bitmap = masks[:,:,index]
         bitmap[bitmap > 0] = 255
@@ -108,7 +111,7 @@ if __name__ == '__main__':
         im = Image.fromarray(bitmap, 'L')
         im.save(outputFileDir, 'PNG')
 
-        logging.debug(f'{object_name} {score}')
+        logging.debug(f'{outputFileDir}')
 
 
 

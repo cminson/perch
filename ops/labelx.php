@@ -21,7 +21,7 @@ if (strlen($label2) > 0)
 else
     $label = "$label1";
 
-$inputFileDir = $_POST['CURRENTFILE'];
+$inputFileDir = $_POST['CURRENTIMAGE'];
 $inputFileDir = "$BASE_DIR$inputFileDir";
 $inputFileName = basename($inputFileDir);
 

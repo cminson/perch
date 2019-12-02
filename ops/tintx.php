@@ -14,9 +14,7 @@ if (strlen($TintColor) < 2) { $TintColor = "FF0000"; }
 
 $TintColor = str_replace("#", "", $TintColor);
 
-$inputFileDir = $_POST['CURRENTFILE'];
-$inputFileDir = "$BASE_DIR$inputFileDir";
-$originalFileDir = $inputFileDir;
+$inputFileDir = GetConversionDir($_POST['CURRENTIMAGE']);
 $inputFileName = basename($inputFileDir);
 
 $targetName = NewImageName($inputFileDir);
@@ -35,7 +33,7 @@ if ($Region != 'ALL') {
 
     RecordCommand("Applying Region Operation").
     $maskFileDir = GetConversionDir($Region);
-    $outputFileDir = ApplyRegionOperation($originalFileDir, $outputFileDir, $maskFileDir);
+    $outputFileDir = ApplyRegionOperation($inputFileDir, $outputFileDir, $maskFileDir);
 }
 
 $outputFilePath = CheckFileSize($outputFileDir);

@@ -9,9 +9,7 @@ $Arg = $_POST['ARG1'];
 $Setting = $_POST['SETTING'];
 $Region = $_POST['REGION'];
 
-$inputFileDir = $_POST['CURRENTFILE'];
-$inputFileDir = GetConversionDir($inputFileDir);
-$originalFileDir = $inputFileDir;
+$inputFileDir = GetConversionDir($_POST['CURRENTIMAGE']);
 
 switch ($Arg)
 {
@@ -70,7 +68,7 @@ if ($Region != 'ALL') {
 
     RecordCommand("Applying Region Operation").
     $maskFileDir = GetConversionDir($Region);
-    $outputFileDir = ApplyRegionOperation($originalFileDir, $outputFileDir, $maskFileDir);
+    $outputFileDir = ApplyRegionOperation($inputFileDir, $outputFileDir, $maskFileDir);
     $outputFilePath = GetConversionPath($outputFileDir);
 }
 

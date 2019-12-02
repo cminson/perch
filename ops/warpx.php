@@ -6,15 +6,15 @@ if (CompleteWithNoAction()) return;
 $LastOperation = 'Warped:';
 $Arg = $_POST['ARG1'];
 $Setting = $_POST['SETTING'];
+$Region = $_POST['REGION'];
 
-RecordCommand("Bend $Arg");
 
-$inputFileDir = $_POST['CURRENTFILE'];
+$inputFileDir = $_POST['CURRENTIMAGE'];
 $inputFileDir = "$BASE_DIR$inputFileDir";
 
-$targetName = NewImageName($inputFileDir);
-$outputFileDir = GetConversionDir($targetName);
-$outputFilePath = GetConversionPath($targetName);
+$imageName = NewImageName($inputFileDir);
+$outputFileDir = GetConversionDir($imageName);
+$outputFilePath = GetConversionPath($imageName);
 
 switch ($Arg)
 {
@@ -62,6 +62,15 @@ case 'SPLICE':
 RecordCommand("WARP $command");
 
 $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+
+if ($Region != 'ALL') {
+
+    RecordCommand("Applying Region Operation").
+    $maskFileDir = GetConversionDir($Region);
+    $outputFileDir = ApplyRegionOperation($inputFileDir, $outputFileDir, $maskFileDir);
+    $outputFilePath = GetConversionPath($outputFileDir);
+}
+
 
 RecordCommand("FINAL $outputFilePath");
 RecordAndComplete("BEND",$outputFilePath,FALSE);

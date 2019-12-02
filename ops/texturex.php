@@ -10,9 +10,7 @@ $Region = $_POST['REGION'];
 RecordCommand("Texture $Arg");
 
 
-$inputFileDir = $_POST['CURRENTFILE'];
-$inputFileDir = "$BASE_DIR$inputFileDir";
-$originalFileDir = $inputFileDir;
+$inputFileDir = GetConversionDir($_POST['CURRENTIMAGE']);
 
 switch ($Arg)
 {
@@ -208,7 +206,7 @@ if ($Region != 'ALL') {
 
     RecordCommand("Applying Region Operation").
     $maskFileDir = GetConversionDir($Region);
-    $outputFileDir = ApplyRegionOperation($originalFileDir, $outputFileDir, $maskFileDir);
+    $outputFileDir = ApplyRegionOperation($inputFileDir, $outputFileDir, $maskFileDir);
     $outputFilePath = GetConversionPath($outputFileDir);
 }
 
