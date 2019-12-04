@@ -34,10 +34,10 @@ if ($Region != 'ALL') {
     RecordCommand("Applying Region Operation").
     $maskFileDir = GetConversionDir($Region);
     $outputFileDir = ApplyRegionOperation($inputFileDir, $outputFileDir, $maskFileDir);
+    $LastOperation .=  " $Region";
 }
+$regions = GenerateImageRegions($inputFileDir, $outputFileDir);
 
-$outputFilePath = CheckFileSize($outputFileDir);
-RecordCommand("FINAL $outputFilePath");
-RecordAndComplete("TINT",$outputFilePath,FALSE);
+RecordAndComplete("TINT",$outputFilePath,$regions);
 
 ?>

@@ -41,6 +41,36 @@ COCO_CLASS_NAMES = ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
                'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
                'teddy bear', 'hair drier', 'toothbrush']
 
+
+#
+# generate the background region mask
+# this is simply the negative of the sum of all other region masks
+#
+def computeBackgroundRegion(file_name,regionFileList):
+
+    if len(regionFileList) == 0: return
+
+    img = Image.open(regionFileList[0])
+    background_bitmap = np.array(img)
+    width, height = img.size
+    object_name = 'background'
+    score = '99'
+    x = y = 0
+
+    for regionFile in regionFileList:
+
+        img = Image.open(regionFile)
+        bitmap = np.array(img)
+        background_bitmap = np.logical_or(background_bitmap, bitmap).astype(np.uint8)
+
+    background_bitmap[background_bitmap == 255] = 0
+    background_bitmap[background_bitmap == 0] = 255
+
+    file_name = f'../CONVERSIONS/m{file_name}.{score}.{object_name}.{x}_{y}_{width}_{height}.png'
+    img = Image.fromarray(background_bitmap, 'L')
+    img.save(file_name, 'PNG')
+
+
 if __name__ == '__main__':
 
     count = len(sys.argv)
@@ -75,17 +105,6 @@ if __name__ == '__main__':
     image = skimage.io.imread(inputFileDir)
     results = model.detect([image], verbose=1)
 
-    logging.debug(f'RESULTS: {len(results)}')
-
-    """
-    r['rois'], r['masks'], r['class_ids'], class_names, r['scores'])
-    always one result.
-    print(COCO_CLASS_NAMES)
-    print(r['class_ids'])
-    print(r['scores'])
-    """
-    logging.debug(f'HERE1')
-
     result = results[0]
     class_ids = result['class_ids']
     masks = result['masks']
@@ -93,6 +112,7 @@ if __name__ == '__main__':
     scores = result['scores']
     rois = result['rois']
 
+    regionFileList = []
     for index, class_id in enumerate(class_ids):
 
         object_name = COCO_CLASS_NAMES[class_id].replace(' ', '_')
@@ -103,15 +123,25 @@ if __name__ == '__main__':
 
         bitmap = masks[:,:,index]
         bitmap[bitmap > 0] = 255
+        print(roi)
         #print(bitmap.shape)
 
-        logging.debug('HERE2')
-        outputFileDir = f'../CONVERSIONS/m{file_name}.{object_name}.{score}.png'
+        y1  = roi[0]
+        x1 = roi[1]
+        y2 = roi[2]
+        x2 = roi[3]
+        width = x2 - x1
+        height = y2 - y1
+
+        outputFileDir = f'../CONVERSIONS/m{file_name}.{score}.{object_name}.{x1}_{y1}_{width}_{height}.png'
         #print(outputFileDir)
         im = Image.fromarray(bitmap, 'L')
         im.save(outputFileDir, 'PNG')
 
-        logging.debug(f'{outputFileDir}')
+        #logging.debug(f'{outputFileDir}')
+        regionFileList.append(outputFileDir)
 
+
+    computeBackgroundRegion(file_name, regionFileList)
 
 

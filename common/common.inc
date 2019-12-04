@@ -155,21 +155,54 @@ function RecordCommand($command)
 //
 // retrieve all region mask files associated with given file
 //
-function GetImageRegions($outputFileDir)
+function GetImageRegions($imageDir)
 {
-    global $CONVERSION_DIR, $HomeImage;
+    global $CONVERSION_DIR;
 
-    $matchName = explode('.', basename($outputFileDir))[0];
+    $matchName = explode('.', basename($imageDir))[0];
     RecordCommand("GetImageRegions $matchName");
-    return array_reverse((glob($CONVERSION_DIR.'m'.$matchName.'*')));
+    //return array_reverse((glob($CONVERSION_DIR.'m'.$matchName.'*')));
+
+    $regionList = array();
+    $regionDirList = glob($CONVERSION_DIR.'m'.$matchName.'*');
+    foreach ($regionDirList as $regionDir)
+    {
+        array_push($regionList, basename($regionDir));
+    }
+    return $regionList;
+}
+
+
+function GenerateImageRegions($previousImageDir, $currentImageDir) 
+{
+    $regionList = GetImageRegions($previousImageDir);
+    $newRegionList = array();
+    $currentImageName = basename($currentImageDir);
+
+    foreach ($regionList as $imageRegionDir)
+    {
+        $regionName = basename($imageRegionDir);
+        $regionNameTerms = explode($regionName, '.');
+        array_shift($regionNameTerms);
+        $newImageRegionDir = "m"."$currentImageName".implode('.', $imageTerms);
+        $command = "cp $imageRegionDir $newImageRegionDir";
+        //$execResult = exec("$icommand 2>&1", $lines, $ConvertResultCode);
+        RecordCommand("GenerateNewRegions $command");
+
+        array_push($newRegionList, $newImageRegionDir);
+    }
+
+
+    return $newRegionList;
+
 }
 
 
 function DisplayRegionPicker($text, $name)
 {
-    global $CONVERSION_DIR, $HomeImage;
+    global $CONVERSION_DIR, $CurrentImage;
 
-    $regionList = GetImageRegions($HomeImage);
+    $regionList = GetImageRegions($CurrentImage);
 
 	print  $text;
 	DisplaySep0();
@@ -234,12 +267,12 @@ function ReportError($error)
 }
 
 
-function RecordAndComplete($op,$outputFilePath,$simple)
+function RecordAndComplete($op,$outputFilePath,$regions)
 {
 global $LastOperation;
 
     $outputFileDir = GetConversionDir($outputFilePath);
-	RecordCommand("RecordAndComplete FILE DIR: $outputFilePath $outputFileDir");
+	RecordCommand("RecordAndComplete FINAL: $outputFilePath $outputFileDir");
 
     if (file_exists($outputFileDir) == TRUE)
 	{
@@ -255,25 +288,9 @@ global $LastOperation;
 	RecordCommand($outputFilePath);
 	echo '<html><head><title>-</title></head><body>';
 	echo '<script language="JavaScript" type="text/javascript">'."\n";
-	echo "parent.completeImageOp(\"$outputFilePath\",\"$stats\");";
+	echo "parent.completeImageOp(\"$outputFilePath\",\"$stats\",\"$regions\");";
 	echo "\n".'</script></body></html>';
 
-    /*
-	if ($simple == TRUE)
-	{
-		$outputFilePath = $outputFilePath."?".$stats;
-		RecordCommand($outputFilePath);
-		echo $outputFilePath;
-	}
-	else
-	{
-		RecordCommand($outputFilePath);
-		echo '<html><head><title>-</title></head><body>';
-		echo '<script language="JavaScript" type="text/javascript">'."\n";
-		echo "parent.completeImageOp(\"$outputFilePath\",\"$stats\");";
-		echo "\n".'</script></body></html>';
-	}
-     */
 }
 
 

@@ -11,7 +11,8 @@ const IMAGE_BUSY = BASE_PATH + "/resources/utils/busy.gif";
 const CONVERSIONS_DIR = "/CONVERSIONS/";
 
 var ListImageURLS = [];  // list of all images in current session
-var ListImageStats = []; // and the parallel list of stats for this images
+var ListImageStats = []; // the parallel list of stats for the image list
+var ListImageRegions = []; // the parallel list of regions for the image list
 var CurrentPosition = 0; // position of the current image being worked on
 
 var	BusyDisplayed = 0;
@@ -19,7 +20,6 @@ var HelpPageDisplayed = false;
 
 
 // the dimensions of the currently displayed image
-// these two variables are used to scale image picks
 var CurrentImageWidth = 1;
 var CurrentImageHeight = 1;
 
@@ -404,12 +404,13 @@ function setCurrentStatus(image,text)
 // 
 // add image to the end of the array of possible images 
 //
-function addImage(imageURL,text)
+function addImage(imageURL,text,regions)
 {
 	hideBusyImage();
 
 	ListImageURLS.push(imageURL);
 	ListImageStats.push(text);
+	ListImageRegions.push(regions.split(','));
 	CurrentPosition = ListImageURLS.length - 1;
 	displayCurrentImage();
 
@@ -417,6 +418,49 @@ function addImage(imageURL,text)
     {
         show('ID_PREVIOUS_IMAGE');
         show('ID_NEXT_IMAGE');
+    }
+
+    displayRegions(regions);
+}
+
+function displayRegions(regions)
+{
+    var e, aspect_x, aspect_y;
+
+    e = document.getElementById('ID_INSIDE');
+    aspect_x = e.offsetWidth / CurrentImageWidth;
+    aspect_y = e.offsetHeight / CurrentImageHeight;
+
+    e = document.getElementById('ID_CANVAS');
+    var ctx = e.getContext("2d");
+    ctx.canvas.width  = w;
+    ctx.canvas.height = h;
+
+    for (i = 0; i < regions.length; i++) {
+
+        var region = regions[i];
+        console.log(region);
+        var boundingBox = region.split('.')[3];
+        var terms = boundingBox.split('_');
+        console.log(boundingBox);
+        var x = terms[0];
+        var y = terms[1];
+        var w = terms[2];
+        var h = terms[3];
+        console.log(x, y, w, h);
+
+        ctx.beginPath();
+        ctx.lineWidth = "2";
+        ctx.strokeStyle = "green";
+
+        var x1 = x * aspect_x;
+        var y1 = y * aspect_y;
+        var width = w * aspect_x;
+        var height = h * aspect_y;
+
+        ctx.rect(x1, y1, width, height);
+        ctx.stroke();
+        ctx.endPath();
     }
 
 }
@@ -469,7 +513,7 @@ function completeWithNoAction()
 // Invoked once the image has been successfully loaded
 // This function is invoked via javascript injection at ./ops/loadx.php
 //
-function completeImageLoad(image,text)
+function completeImageLoad(image,text,regions)
 {
     console.log("completeImageLoad: ", image, text);
 	enableConvertButton();
@@ -484,16 +528,14 @@ function completeImageLoad(image,text)
 
     ListImageURLS = [];
     ListImageStats = [];
+    ListImageRegions = [];
     CurrentPosition = 0;
     NextPosition = 0;
 
-	//var relImage = image.replace(BASE_PATH,".");
 	var relImage = image.replace(BASE_PATH,"");
     console.log(relImage, image);
 
-	//console.log("Adding Image: ", relImage);
-	//addImage(relImage,text);
-	addImage(image,text);
+	addImage(image,text,regions);
 
     document.getElementById('ID_HOME_IMAGE').src = image;
 
@@ -507,7 +549,7 @@ function completeImageLoad(image,text)
 // Invoked once a conversion has been executed on an image.
 // This function is invoked the PHP RecordAndComplete() in common.inc.
 //
-function completeImageOp(image,text)
+function completeImageOp(image,text,regions)
 {
 	enableConvertButton();
 
@@ -521,7 +563,9 @@ function completeImageOp(image,text)
 	{
 		return;
 	}
-	addImage(relImage,text);
+
+
+	addImage(relImage,text,regions);
 	hideBusyImage();
 }
 

@@ -24,9 +24,70 @@ include "/var/www/perch/common/common.inc";
     <link href="./common/main.css"  type="text/css" rel="stylesheet">
     <script src="./common/main.js"></script>
 
+<style>
+
+.outsideWrapper{
+    width:512px;
+    height:auto;
+    border:5px solid black;}
+
+.insideWrapper{
+    width:100%;
+    height:auto;
+    position:relative;}
+
+.coveredImage{
+    width:512px;
+    height: auto;
+    position:static; 
+    display: inline-block; border: none; margin-top:0px; margin-bottom:0px; cursor: crosshair; }
+
+.coveringCanvas{
+    width:100%; height:100%;
+    position:absolute; top:0px; left:0px;
+    xbackground-color: rgba(255,0,0,.1); }
+
+</style>
+
+
+<script>
+    function init() {
+        console.log('init');
+
+        /*
+        var e = document.getElementById('ID_CANVAS');
+        var ctx = e.getContext("2d");
+        ctx.beginPath();
+        ctx.lineWidth = "2";
+        ctx.strokeStyle = "green";
+        x = 0
+        y = 109
+        w = 466;
+        h = 614;
+
+        r = 466/622;
+        r = 512/683;
+        y = y * r;
+        x = x * r;
+        console.log(y);
+
+        ctx.rect(x, y, h, w);
+        ctx.stroke();
+        ctx.fillStyle = "#FF0000";
+        //ctx.fillRect(x, y, h, r);
+
+        e = document.getElementById('ID_MAIN_IMAGE');
+        var width = e.clientWidth;
+        var height = e.clientHeight;
+        console.log(width, height);
+        */
+    }
+
+</script>
+
 </head>
 
-<body style="text-align: center">
+<body onload="init()" style="text-align: center">
     <div id="home"></div>
 
 <div style="display: none" id="ID_HELP_AREA">
@@ -71,7 +132,18 @@ include "/var/www/perch/common/common.inc";
     <p>
     <a class="oplink" id="viewimage" target="_blank" onclick="viewCurrentImage()" href="">View Image</a>
     <br>
+
+        <center>
+    <div class="outsideWrapper">
+    <div ID="ID_INSIDE" class="insideWrapper">
+        <img src="./resources/banners/banner01.jpg" class="coveredImage" id="ID_MAIN_IMAGE">
+        <canvas id="ID_CANVAS" class="coveringCanvas"></canvas>
+    </div>
+    </div>
+
+<!--
     <img style="display: inline-block; border: none; height: 290px; margin-top:0px; margin-bottom:0px; cursor: crosshair" src="./resources/banners/banner01.jpg" alt="" id="ID_MAIN_IMAGE" onclick="viewCurrentImage()">
+-->
     <!-- END IMAGE AREA  -->
 
 
