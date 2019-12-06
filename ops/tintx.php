@@ -14,29 +14,31 @@ if (strlen($TintColor) < 2) { $TintColor = "FF0000"; }
 
 $TintColor = str_replace("#", "", $TintColor);
 
-$inputFileDir = GetConversionDir($_POST['CURRENTIMAGE']);
+$inputFilePath = GetConversionPath($_POST['CURRENTIMAGE']);
 $inputFileName = basename($inputFileDir);
 
-$targetName = NewImageName($inputFileDir);
-$outputFileDir = GetConversionDir($targetName);
-$outputFilePath = GetConversionPath($targetName);
+$imageName = NewImageName($inputFilePath);
+$outputFilePath = GetConversionPath($imageName);
 
 $hash = "";
 if (ctype_xdigit($TintColor) == TRUE) { $hash = "#"; }
 
 $TintLevel = 100 - $TintLevel;
-$command = "convert -fill '$hash$TintColor' -tint $TintLevel $inputFileDir $outputFileDir";
+$command = "convert -fill '$hash$TintColor' -tint $TintLevel $inputFilePath $outputFilePath";
 $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 RecordCommand("$command");
+
+$regionList = GenerateImageRegions($inputFilePath, $outputFilePath);
+$regions = Implode(',', $regionList);
 
 if ($Region != 'ALL') {
 
     RecordCommand("Applying Region Operation").
-    $maskFileDir = GetConversionDir($Region);
-    $outputFileDir = ApplyRegionOperation($inputFileDir, $outputFileDir, $maskFileDir);
+    $maskFilePath = GetConversionPath($Region);
+    $outputFilePath = ApplyRegionOperation($inputFilePath, $outputFilePath, $maskFilePath);
     $LastOperation .=  " $Region";
 }
-$regions = GenerateImageRegions($inputFileDir, $outputFileDir);
+RecordCommand("TINT REGIONS: $regions");
 
 RecordAndComplete("TINT",$outputFilePath,$regions);
 

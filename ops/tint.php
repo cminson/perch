@@ -4,7 +4,7 @@ include '../common/common.inc';
 $Title = 'Tint';
 
 RecordCommand("TINT REGION $current");
-$regionList = GetImageRegions();
+$regionList = GetImageRegions($current);
 
 DisplayTitle($Title);
 DisplayFormStart();

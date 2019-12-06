@@ -45,7 +45,7 @@ include "/var/www/perch/common/common.inc";
 .coveringCanvas{
     width:100%; height:100%;
     position:absolute; top:0px; left:0px;
-    xbackground-color: rgba(255,0,0,.1); }
+    background-color: rgba(255,0,0,.3); }
 
 </style>
 
@@ -60,27 +60,11 @@ include "/var/www/perch/common/common.inc";
         ctx.beginPath();
         ctx.lineWidth = "2";
         ctx.strokeStyle = "green";
-        x = 0
-        y = 109
-        w = 466;
-        h = 614;
-
-        r = 466/622;
-        r = 512/683;
-        y = y * r;
-        x = x * r;
-        console.log(y);
-
-        ctx.rect(x, y, h, w);
+        ctx.rect(0, 0, 100, 100);
         ctx.stroke();
-        ctx.fillStyle = "#FF0000";
-        //ctx.fillRect(x, y, h, r);
-
-        e = document.getElementById('ID_MAIN_IMAGE');
-        var width = e.clientWidth;
-        var height = e.clientHeight;
-        console.log(width, height);
         */
+
+
     }
 
 </script>

@@ -1,38 +1,37 @@
 <?php
-$BASE_PATH = "http://54.71.108.91"; // also set in main.js
+$BASE_URL = "http://54.71.108.91"; // also set in main.js
+$BASE_PATH = "/var/www/perch";
 
 // global env for php and javascript
-$HOME_DIR = "/var/www/perh/index.html";
-$BASE_DIR = "/var/www/perch";
+$HOME_PATH = "/var/www/perh/index.html";
+$CONVERSION_URL = "$BASE_URL"."/CONVERSIONS/";
 $CONVERSION_PATH = "$BASE_PATH"."/CONVERSIONS/";
-$CONVERSION_DIR = "$BASE_DIR"."/CONVERSIONS/";
-
 $LOGFILE = "/var/www/perch/LOGS/command.log";
-$DEBUGFILE_COMMAND = "/var/www/perch/LOGS/debug.log";
 
 // precomputed paths to resources
-$PATH_IMAGE_DEL = $BASE_PATH."/resources/utils/delicon1.png";
-$PATH_IMAGE_NOOP = $BASE_PATH."/resources/utils/noop.png";
-$PATH_IMAGE_ARROW_UP = $BASE_PATH."/resources/navs/arrow-up.jpg";
+$URL_IMAGE_ARROW_UP = $BASE_URL."/resources/navs/arrow-up.jpg";
+$URL_IMAGE_EX01 = $BASE_URL."/resources/defaults/tab.jpg";
+$URL_IMAGE_LINEBREAK = "$BASE_URL:/wimages/tools/graypixel.jpg";
+$URL_IMAGE_BUSY = "$BASE_URL/resources/utils/smallbusyicon.gif";
 $PATH_IMAGE_EX01 = $BASE_PATH."/resources/defaults/tab.jpg";
-$DIR_IMAGE_EX01 = $BASE_DIR."/resources/defaults/tab.jpg";
-$DIR_IMAGE_LINEBREAK = "$BASE_PATH:/wimages/tools/graypixel.jpg";
-$DIR_IMAGE_BUSY = "$BASE_PATH/resources/utils/smallbusyicon.gif";
-$DIR_FONTS = "$BASE_DIR/resources/fonts/fontlist.txt";
-$DIR_STYLES = "$BASE_DIR/resources/styles/";
+$PATH_FONTS = "$BASE_PATH/resources/fonts/fontlist.txt";
+$PATH_STYLES = "$BASE_PATH/resources/styles/";
 
-$DIR_OPS = './ops/';
+$PATH_OPS = './ops/';
 
 // this value is cross-definied in style1.css for img tags!!
 $HEIGHT_IMAGE = 290;   //styled height of all displayed images
 
 putenv("LD_LIBRARY_PATH=/usr/local/lib");
 
-
 $MAX_FILE_SIZE = 10000000;   // 10M. Max image file size. Also set in php.ini (upload_max_filesize)
 $MAX_FILE_SIZE_PRINTABLE = "10.0Mb";  //For output in help messages
 $RESIZE_MAX_WIDTH = 800;  // Resize target width when resizing overly large files
 $RESIZE_MAX_HEIGHT= 800;  // Resize target height when resizing overly large files
+
+// All image names are randomly selected in this band
+$IMAGE_MIN_NUMBER = 1000000;
+$IMAGE_MAX_NUMBER = 9999999;
 
 $RecordCommandOn=TRUE;
 if ((isset($_POST['CURRENTIMAGE'])) == TRUE)
@@ -42,70 +41,50 @@ if ((isset($_POST['CURRENTIMAGE'])) == TRUE)
     RecordCommand("Home: $HomeImage Current: $CurrentImage");
 }
 
-
 $IMAGE_SUFFIX = '.png';
-
 
 
 /////////////////////////////////////////////////////
 //Common Functions
 ////////////////////////////////////////////////////
-//
-//
-function MakeRandom()
-{
-    $rand = rand(100000,999999);
-    return $rand;
-}
 
-
-function StripSuffix($name)
-{
-	$len = strlen($name);
-	$suffix = strrchr($name, ".");
-	if ($suffix == FALSE)
-		return $name;
-	$newName = str_replace("$suffix", "", $name); 
-	return $newName;
-}
-
-
-function ApplyRegionOperation($originalFileDir, $convertedFileDir, $maskFileDir)
+function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePath)
 {
 
     $imageName = NewTMPImageName();
-    $cutterFileDir = GetConversionDir($imageName);
-    $command = "convert -transparent white -fuzz 40% $maskFileDir $cutterFileDir";
+    $cutterFilePath = GetConversionPath($imageName);
+    $command = "convert -transparent white -fuzz 40% $maskFilePath $cutterFilePath";
     RecordCommand($command);
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 
     $imageName = NewTMPImageName();
-    $tmp1FileDir = GetConversionDir($imageName);
-    $command = "composite -geometry +0+0 $cutterFileDir $convertedFileDir $tmp1FileDir";
+    $tmp1FilePath = GetConversionPath($imageName);
+    $command = "composite -geometry +0+0 $cutterFilePath $convertedFilePath $tmp1FilePath";
     RecordCommand($command);
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 
     $imageName = NewTMPImageName();
-    $tmp2FileDir = GetConversionDir($imageName);
-    $command = "convert -transparent black -fuzz 40% $tmp1FileDir $tmp2FileDir";
+    $tmp2FilePath = GetConversionPath($imageName);
+    $command = "convert -transparent black -fuzz 40% $tmp1FilePath $tmp2FilePath";
     RecordCommand($command);
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 
     $imageName = NewImageName();
-    $resultFileDir = GetConversionDir($imageName);
-    $command = "composite -geometry +0+0 $tmp2FileDir $originalFileDir $resultFileDir";
+    $resultFilePath = GetConversionPath($imageName);
+    $command = "composite -geometry +0+0 $tmp2FilePath $originalFilePath $resultFilePath";
     RecordCommand($command);
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 
-    return $resultFileDir;
+    RecordCommand("APPLY FINAL $resultFilePath");
+    return $resultFilePath;
 }
 
 
 function NewImageName()
 {
-    global $IMAGE_SUFFIX;
+    global $IMAGE_SUFFIX, $IMAGE_MIN_NUMBER, $IMAGE_MAX_NUMBER;
 
-    $r = rand(1000000,9999999);
+    $r = rand($IMAGE_MIN_NUMBER,$IMAGE_MAX_NUMBER);
     return "$r$IMAGE_SUFFIX";
 }
 
@@ -116,11 +95,11 @@ function NewTMPImageName()
 }
 
 
-function NewRegionMaskName($imageDir, $objectName, $score)
+function NewRegionMaskName($imagePath, $objectName, $score)
 {
     global $IMAGE_SUFFIX;
 
-    $baseName = basename($imageDir);
+    $baseName = basename($imagePath);
     RecordCommand($baseName);
     $baseName = explode('.', $baseName)[0];
     RecordCommand($baseName);
@@ -155,43 +134,57 @@ function RecordCommand($command)
 //
 // retrieve all region mask files associated with given file
 //
-function GetImageRegions($imageDir)
+function GetImageRegions($imagePath)
 {
-    global $CONVERSION_DIR;
+    global $CONVERSION_PATH;
 
-    $matchName = explode('.', basename($imageDir))[0];
-    RecordCommand("GetImageRegions $matchName");
-    //return array_reverse((glob($CONVERSION_DIR.'m'.$matchName.'*')));
+    $matchName = explode('.', basename($imagePath))[0];
 
     $regionList = array();
-    $regionDirList = glob($CONVERSION_DIR.'m'.$matchName.'*');
-    foreach ($regionDirList as $regionDir)
+    $regionPathList = glob($CONVERSION_PATH.'m'.$matchName.'*');
+    foreach ($regionPathList as $regionPath)
     {
-        array_push($regionList, basename($regionDir));
+        array_push($regionList, basename($regionPath));
     }
     return $regionList;
 }
 
 
-function GenerateImageRegions($previousImageDir, $currentImageDir) 
+function GenerateImageRegions($previousImagePath, $currentImagePath) 
 {
-    $regionList = GetImageRegions($previousImageDir);
+    global $IMAGE_SUFFIX;
+
     $newRegionList = array();
-    $currentImageName = basename($currentImageDir);
+    $currentImageName = basename($currentImagePath, $IMAGE_SUFFIX);
+    $regionList = GetImageRegions($previousImagePath);
 
-    foreach ($regionList as $imageRegionDir)
+    foreach ($regionList as $region)
     {
-        $regionName = basename($imageRegionDir);
-        $regionNameTerms = explode($regionName, '.');
-        array_shift($regionNameTerms);
-        $newImageRegionDir = "m"."$currentImageName".implode('.', $imageTerms);
-        $command = "cp $imageRegionDir $newImageRegionDir";
-        //$execResult = exec("$icommand 2>&1", $lines, $ConvertResultCode);
-        RecordCommand("GenerateNewRegions $command");
+        $oldRegionPath = GetConversionPath($region);
 
-        array_push($newRegionList, $newImageRegionDir);
+        $regionTerms = explode('.', $region);
+        array_shift($regionTerms);
+        $newRegion = implode('.', $regionTerms);
+        /*
+        foreach ($regionTerms as $term)
+        {
+            RecordCommand("GenerateNewRegions00 $term");
+        }
+        foreach ($regionTerms as $term)
+        {
+            RecordCommand("GenerateNewRegions01 $term");
+        }
+         */
+
+        RecordCommand("GenerateNewRegions1 $region $newRegion");
+
+        $newRegionPath = GetConversionPath("m"."$currentImageName.$newRegion");
+        $command = "cp $oldRegionPath $newRegionPath";
+        $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+        RecordCommand("GenerateNewRegions COMMAND  $command");
+
+        array_push($newRegionList, basename($newRegionPath));
     }
-
 
     return $newRegionList;
 
@@ -200,7 +193,7 @@ function GenerateImageRegions($previousImageDir, $currentImageDir)
 
 function DisplayRegionPicker($text, $name)
 {
-    global $CONVERSION_DIR, $CurrentImage;
+    global $CONVERSION_PATH, $CurrentImage;
 
     $regionList = GetImageRegions($CurrentImage);
 
@@ -212,11 +205,10 @@ function DisplayRegionPicker($text, $name)
     foreach ($regionList as $regionFile)
     {
         $terms = explode('.', $regionFile);
-        $regionName = $terms[1];
+        $regionName = $terms[2];
 	    print  "<option value=\"$regionFile\">$regionName\n";
     }
 	print  "</select>\n";
-
 }
 
 
@@ -237,12 +229,12 @@ global $X_CLICKTOVIEWMAC,$X_CLICKTOVIEWPC;
 }
 
 
-function GetStatString($outputFileDir)
+function GetStatString($outputFilePath)
 {
     global $X_SIZE, $X_DIMENSIONS, $X_COLORCOUNT, $X_HISTORY, $LastOperation;
 
-	GetImageAttributes($outputFileDir,$width,$height,$size);
-    $colors = GetColorCount($outputFileDir);
+	GetImageAttributes($outputFilePath,$width,$height,$size);
+    $colors = GetColorCount($outputFilePath);
 
     $X_COLORS = "Colors";
     $psize = round(($size / 1000),0);
@@ -271,12 +263,12 @@ function RecordAndComplete($op,$outputFilePath,$regions)
 {
 global $LastOperation;
 
-    $outputFileDir = GetConversionDir($outputFilePath);
-	RecordCommand("RecordAndComplete FINAL: $outputFilePath $outputFileDir");
+    $outputFileURL = GetConversionURL($outputFilePath);
+	RecordCommand("RecordAndComplete FINAL: $outputFileURL $outputFilePath");
 
-    if (file_exists($outputFileDir) == TRUE)
+    if (file_exists($outputFilePath) == TRUE)
 	{
-		$stats = GetStatString($outputFileDir);
+		$stats = GetStatString($outputFilePath);
 	}
 	else
 	{
@@ -285,10 +277,10 @@ global $LastOperation;
 		RecordCommand("RecordAndComplete: Error Image = $outputFilePath");
 	}
 
-	RecordCommand($outputFilePath);
+	RecordCommand("$outputFilePath $stats $regions");
 	echo '<html><head><title>-</title></head><body>';
 	echo '<script language="JavaScript" type="text/javascript">'."\n";
-	echo "parent.completeImageOp(\"$outputFilePath\",\"$stats\",\"$regions\");";
+	echo "parent.completeImageOp(\"$outputFileURL\",\"$stats\",\"$regions\");";
 	echo "\n".'</script></body></html>';
 
 }
@@ -308,11 +300,11 @@ global $X_RETURNTOMAINPAGE;
 function DisplayMainReturn()
 { 
 global $X_RETURNTOMAINPAGE;
-global $BASE_PATH;
+global $BASE_URL;
 
 	$return = $X_RETURNTOMAINPAGE;
 	print "<center>\n";
-	print "<A class=navlink HREF=\"$BASE_PATH\">$return</A>\n";
+	print "<A class=navlink HREF=\"$BASE_URL\">$return</A>\n";
 	print "</center>\n";
 }
 
@@ -336,10 +328,10 @@ function DisplayCurrentEventJSImage($current)
 
 function DisplayOp($category, $text, $file, $target)
 {
-	global $BASE_PATH;
+	global $BASE_URL;
 	global $fileLoaded;
 	global $LastOperation;
-	global $DIR_OPS;
+	global $PATH_OPS;
 
 	print "<tr>\n";
     print "<td style=\"height: 12px; padding: 4px; text-align: left; white-space: nowrap; font-size: 10px;\">\n";
@@ -347,18 +339,18 @@ function DisplayOp($category, $text, $file, $target)
 	print "</td>\n";
     print "<td style=\"height: 12px; padding: 4px; text-align: center; white-space: nowrap; font-size: 10px;\">\n";
 
-    print "<img height=1 src=\"$BASE_PATH/wimages/tools/pixel.gif\" alt=\"\">\n";
+    print "<img height=1 src=\"$BASE_URL/wimages/tools/pixel.gif\" alt=\"\">\n";
 	print "</td>\n";
     print "<td style=\"height: 12px; padding: 4px; text-align: left; white-space: nowrap; font-size: 10px;\">\n";
 
 	if (strlen($target) < 1)
 	{
-		$op = "$DIR_OPS$file";
+		$op = "$PATH_OPS$file";
 		print "<A class=navlink href=\"#home\" onclick=\"displayOp('$op')\" >$text</A>\n";
 	}
 	else
 	{
-		$op = "$DIR_OPS$file";
+		$op = "$PATH_OPS$file";
 		print "<A class=navlink href=\"#home\" onclick=\"execSimpleOp('$op','$target')\">$text</A>\n";
 
 	}
@@ -370,30 +362,30 @@ function DisplayOp($category, $text, $file, $target)
 
 function DisplayOpButton($label, $opHandler)
 {
-	global $BASE_PATH;
-	global $DIR_OPS;
+	global $BASE_URL;
+	global $PATH_OPS;
 
 	print "<tr>\n";
 
     /*
     print "<td style=\"height: 12px; padding: 4px; text-align: center; white-space: nowrap; font-size: 10px;\">\n";
-    print "<img height=1 src=\"$BASE_PATH/wimages/tools/pixel.gif\" alt=\"\">\n";
+    print "<img height=1 src=\"$BASE_URL/wimages/tools/pixel.gif\" alt=\"\">\n";
 	print "</td>\n";
      */
 
     print "<td style=\"height: 12px; padding: 4px; text-align: left; white-space: nowrap; font-size: 10px;\">\n";
 
-	$opHandler = "$DIR_OPS$opHandler";
+	$opHandler = "$PATH_OPS$opHandler";
     print "<button class=\"opHandler\" onclick=\"displayOp('$opHandler')\">$label</button>\n";
 
 	print "</td></tr>\n\n\n";
 }
 
 
-function DetermineImageSize($path,$w,$h)
+function DetermineImageSize($imagePath,$w,$h)
 {
     $w = $h = 0;
-    $icommand = "identify $inputFileDir";
+    $icommand = "identify $imagePath";
     $execResult = exec("$icommand 2>&1", $lines, $ConvertResultCode);
     $tok = strtok($execResult," ");
     for ($i = 0; $i < 6; $i++)
@@ -409,79 +401,9 @@ function DetermineImageSize($path,$w,$h)
 }
 
 
-function IsAnimatedGIF($inputFileDir)
+function GetImageAttributes($imagePath, &$width, &$height, &$size)
 {
-/*
-    if ((IsValidGIF($inputFileDir)) == FALSE)
-        return FALSE;
-*/
-	//RecordCommand("IsAnimatedGIF $inputFileDir");
-    $imageCount = 0;
-    $icommand = "identify $inputFileDir";
-    $execResult = exec("$icommand 2>&1", $lines, $ConvertResultCode);
-	foreach ($lines as $line)
-    {
-		//RecordCommand("IsAnimatedGIF $line");
-        $imageCount++;
-    }
-    if ($imageCount < 2)
-	{
-		//RecordCommand("IsAnimatedGIF == FALSE");
-        return FALSE;
-	}
-	//RecordCommand("IsAnimatedGIF == TRUE");
-    return TRUE;
-}
-
-
-function IsAnimatedNonGIF($inputFileDir)
-{
-    if ((IsValidGIF($inputFileDir)) != FALSE)
-        return FALSE;
-    $imageCount = 0;
-    $icommand = "identify $inputFileDir";
-    $execResult = exec("$icommand 2>&1", $lines, $ConvertResultCode);
-	foreach ($lines as $line)
-    {
-        $imageCount++;
-    }
-    if ($imageCount < 2)
-        return FALSE;
-    return TRUE;
-}
-
-
-//
-// return the first image in an animated GIF image
-//
-// this function assumes the image IS an animation
-// thus you should always call this function only AFTER calling IsAnimatedGIF
-//
-function getBaseImage($inputFileDir)
-{
-global $PNGSUFFIX;
-
-    $imageName = basename($inputFileDir);
-    $imageName = StripSuffix($imageName);
-    //RecordCommand("target Image: $imageName");
-    $imageName = TMPPNG();
-    $outputFileDir = GetConversionDir($imageName);
-    $command = "convert $inputFileDir $outputFileDir";
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-
-    $baseFile = "$imageName-0$PNGSUFFIX";
-
-    $baseFileDir = GetConversionDir($baseFile);
-    //RecordCommand("Base Image: $baseFileDir ");
-    if (file_exists($baseFileDir) == TRUE)
-        return $baseFile;
-    return FALSE;
-}
-
-
-function GetImageAttributes($imageDir, &$width, &$height, &$size)
-{
-    $icommand = "identify $imageDir";
+    $icommand = "identify $imagePath";
     $execResult = exec("$icommand 2>&1", $lines, $ConvertResultCode);
     $tok = strtok($execResult," ");
     for ($i = 0; $i < 6; $i++)
@@ -494,20 +416,20 @@ function GetImageAttributes($imageDir, &$width, &$height, &$size)
             break;
         }
     }
-    if (file_exists($imageDir) == TRUE)
-		$size = filesize($imageDir);
+    if (file_exists($imagePath) == TRUE)
+		$size = filesize($imagePath);
 }
 
 
-function GetColorCount($imageDir)
+function GetColorCount($imagePath)
 {
 
-    if (file_exists($imageDir) == FALSE)
+    if (file_exists($imagePath) == FALSE)
 	{
 		return "NA";
 	}
-	//RecordCommand("GetColorCount $imageDir");
-    $command = "identify -format \"%k \" $imageDir";
+	//RecordCommand("GetColorCount $imagePath");
+    $command = "identify -format \"%k \" $imagePath";
     $count = exec("$command 2>&1", $lines, $ConvertResultCode);
 	$spc = substr_count($count,' ');
 	if ($spc >= 1)
@@ -519,34 +441,34 @@ function GetColorCount($imageDir)
 }
 
 
-function ResizeImage($imageDir, $width, $height, $exactFit)
+function ResizeImage($imagePath, $width, $height, $exactFit)
 {
     $imageName = NewImageName();
-    $outputFileDir = GetConversionDir($imageName);
+    $outputFilePath = GetConversionPath($imageName);
     if ($exactFit == TRUE)
-        $command = "convert -resize $width"."x"."$height"."\!"." $imageDir $outputFileDir";
+        $command = "convert -resize $width"."x"."$height"."\!"." $imagePath $outputFilePath";
     else
-        $command = "convert -resize $width"."x"."$height $imageDir $outputFileDir";
+        $command = "convert -resize $width"."x"."$height $imagePath $outputFilePath";
 
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-    return $outputFileDir;
+    return $outputFilePath;
 }
 
 
-function ResizeTMPImage($imageDir, $width, $height, $exactFit)
+function ResizeTMPImage($imagePath, $width, $height, $exactFit)
 {
 
-    $imageName = basename($imageDir);
+    $imageName = basename($imagePath);
     $imageName = TMPName($imageName);
-    $outputFileDir = GetConversionDir($imageName);
+    $outputFilePath = GetConversionPath($imageName);
     if ($exactFit == TRUE)
-        $command = "convert -resize $width"."x"."$height"."\!"." $imageDir $outputFileDir";
+        $command = "convert -resize $width"."x"."$height"."\!"." $imagePath $outputFilePath";
     else
-        $command = "convert -resize $width"."x"."$height $imageDir $outputFileDir";
+        $command = "convert -resize $width"."x"."$height $imagePath $outputFilePath";
 
     RecordCommand("XRESIZE: $command");
     $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-    return $outputFileDir;
+    return $outputFilePath;
 }
 
 
@@ -555,7 +477,7 @@ function DisplayCurrentClickableImageReturnMain($current,$returnToMainPage)
 	global $WIDTH_IMAGE;
 
 	print "<center>\n";
-	print "<A class=navlink HREF=\"$BASE_PATH/index.html?CURRENTIMAGE=$current\">$returnToMainPage</A>\n";
+	print "<A class=navlink HREF=\"$BASE_URL/index.html?CURRENTIMAGE=$current\">$returnToMainPage</A>\n";
 
 	print "<br><p>";
 	print "<table>\n";
@@ -590,23 +512,23 @@ function DisplayCurrentClickableImageReturnMain($current,$returnToMainPage)
 
 
 // was 500k and 450
-function CheckFileSize($inputFileDir)
+function CheckFileSize($inputFilePath)
 {
 
-	$imageName = basename($inputFileDir);
-	$outputFilePath = GetConversionPath($inputFileDir);
+	$imageName = basename($inputFilePath);
+	$outputFilePath = GetConversionURL($inputFilePath);
 
-    GetImageAttributes($inputFileDir,$width,$height,$size);
+    GetImageAttributes($inputFilePath,$width,$height,$size);
     RecordCommand("CHECKFILESIZE PRE REDUCE $size ");
     if ($size > 800000)
     {
         $imageName = NewImageName();
 		if (($width > 650) || ($height > 650))
 		{
-			$outputFileDir = GetConversionDir($imageName);
 			$outputFilePath = GetConversionPath($imageName);
+			$outputFileURLh = GetConversionURL($imageName);
 
-			$command = "convert -resize 650x650 $inputFileDir $outputFileDir";
+			$command = "convert -resize 650x650 $inputFilePath $outputFilePath";
 			$execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 			RecordCommand("CHECKFILE POST REDUCE  $command");
 		}
@@ -616,7 +538,7 @@ function CheckFileSize($inputFileDir)
 
 function DisplayConvertButton()
 {
-global $DIR_OPS;
+global $PATH_OPS;
 
 	print "<P><BR>";
 	print "<center>";
@@ -768,12 +690,12 @@ function DisplayLineSep1()
 
 function DisplayFormStart()
 {
-    global $DIR_OPS, $CurrentImage, $HomeImage;
+    global $PATH_OPS, $CurrentImage, $HomeImage;
 
 	$op = $_SERVER['PHP_SELF'];
 	$op = basename($op);
 	$op = str_replace(".php","x.php",$op);
-	$op = "$DIR_OPS$op";
+	$op = "$PATH_OPS$op";
 
 	print "\n";
 	print "<center>\n";
@@ -820,10 +742,10 @@ function DisplayTextInput($text, $name, $value, $size)
 
 function DisplayFontPicker($text, $default, $name)
 {
-global $DIR_FONTS;
+global $PATH_FONTS;
 
     $fonts = array();
-    $fh = fopen("$DIR_FONTS","r");
+    $fh = fopen("$PATH_FONTS","r");
     while(!feof($fh))  
     {
 	    $font = fgets($fh);
@@ -1311,24 +1233,24 @@ global $X_SLOWNOTE;
 function DisplayDivColorPicker()
 {
 
-global $BASE_PATH;
+global $BASE_URL;
 
 	$name = "divpick";
 	print  "<center>\n";
     print  "<input type=\"radio\" name=\"$name\" checked onclick=\"changecolor('white');\">\n";
-    print  "<img width=\"16\" src=\"$BASE_PATH/wimages/colors/white.png\">\n";
+    print  "<img width=\"16\" src=\"$BASE_URL/wimages/colors/white.png\">\n";
     DisplaySep1();
 
     print  "<input type=\"radio\" name=\"$name\" onclick=\"changecolor('red');\">\n";
-    print  "<img width=\"16\" src=\"$BASE_PATH/wimages/colors/red.png\">\n";
+    print  "<img width=\"16\" src=\"$BASE_URL/wimages/colors/red.png\">\n";
     DisplaySep1();
 
     print  "<input type=\"radio\" name=\"$name\" onclick=\"changecolor('green');\">\n";
-    print  "<img width=\"16\" src=\"$BASE_PATH/wimages/colors/green.png\">\n";
+    print  "<img width=\"16\" src=\"$BASE_URL/wimages/colors/green.png\">\n";
     DisplaySep1();
 
     print  "<input type=\"radio\" name=\"$name\" onclick=\"changecolor('blue');\">\n";
-    print  "<img width=\"16\" src=\"$BASE_PATH/wimages/colors/blue.png\">\n";
+    print  "<img width=\"16\" src=\"$BASE_URL/wimages/colors/blue.png\">\n";
 
 	print  "</center>\n";
 }
@@ -1336,30 +1258,30 @@ global $BASE_PATH;
 
 function DisplayCoreColorPicker($title,$name)
 {
-global $BASE_PATH;
+global $BASE_URL;
 
     print "<input type=\"radio\" name=\"$name\" value=\"#ff0000\" checked>\n";
-    print "<img width=\"16\" src=\"$BASE_PATH/wimages/colors/red.png\">\n";
+    print "<img width=\"16\" src=\"$BASE_URL/wimages/colors/red.png\">\n";
     DisplaySep1();
 
     print "<input type=\"radio\" name=\"$name\" value=\"#00ff00\">\n";
-    print "<img width=\"16\" src=\"$BASE_PATH/wimages/colors/green.png\">\n";
+    print "<img width=\"16\" src=\"$BASE_URL/wimages/colors/green.png\">\n";
     DisplaySep1();
 
     print "<input type=\"radio\" name=\"$name\" value=\"#0000ff\">\n";
-    print "<img width=\"16\" src=\"$BASE_PATH/wimages/colors/blue.png\">\n";
+    print "<img width=\"16\" src=\"$BASE_URL/wimages/colors/blue.png\">\n";
     DisplaySep1();
 
     print "<input type=\"radio\" name=\"$name\" value=\"#ffff00\">\n";
-    print "<img width=\"16\" src=\"$BASE_PATH/wimages/colors/yellow.png\">\n";
+    print "<img width=\"16\" src=\"$BASE_URL/wimages/colors/yellow.png\">\n";
     DisplaySep1();
 
     print "<input type=\"radio\" name=\"$name\" value=\"#00ffff\">\n";
-    print "<img width=\"16\" src=\"$BASE_PATH/wimages/colors/cyan.png\">\n";
+    print "<img width=\"16\" src=\"$BASE_URL/wimages/colors/cyan.png\">\n";
     DisplaySep1();
 
     print "<input type=\"radio\" name=\"$name\" value=\"#ff00ff\">\n";
-    print "<img width=\"16\" src=\"$BASE_PATH/wimages/colors/purple.png\">\n";
+    print "<img width=\"16\" src=\"$BASE_URL/wimages/colors/purple.png\">\n";
     DisplaySep1();
 }
 
@@ -1381,25 +1303,23 @@ function CompleteWithNoAction()
 }
 
 
+function GetConversionURL($path)
+{
+    global $CONVERSION_URL;
+
+    $terms = explode("/",$path);
+    $count = count($terms);
+    return "$CONVERSION_URL".$terms[$count-1];
+}
+
+
 function GetConversionPath($path)
 {
     global $CONVERSION_PATH;
 
     $terms = explode("/",$path);
     $count = count($terms);
-    $path = "$CONVERSION_PATH".$terms[$count-1];
-    return $path;
-}
-
-
-function GetConversionDir($path)
-{
-    global $CONVERSION_DIR;
-
-    $terms = explode("/",$path);
-    $count = count($terms);
-    $path = "$CONVERSION_DIR".$terms[$count-1];
-    return $path;
+    return "$CONVERSION_PATH".$terms[$count-1];
 }
 
 

@@ -5,10 +5,10 @@
  * Author: Christophewr Minson
  * https://www.christopherminson.com
  */
-const BASE_PATH = "http://54.71.108.91";   // also set in common.inc
+const BASE_URL = "http://54.71.108.91";   // also set in common.inc
 
-const IMAGE_BUSY = BASE_PATH + "/resources/utils/busy.gif";
-const CONVERSIONS_DIR = "/CONVERSIONS/";
+const IMAGE_BUSY = BASE_URL + "/resources/utils/busy.gif";
+const CONVERSIONS_PATH = "/CONVERSIONS/";
 
 var ListImageURLS = [];  // list of all images in current session
 var ListImageStats = []; // the parallel list of stats for the image list
@@ -29,11 +29,9 @@ function chooseFrameFile(frame)
 {
     var e;
 
-    console.log('chooseFrameFile');
     SelectedFrame = frame;
 
     e  = document.getElementById('ID_SUBMIT_FRAMEFILE');
-    console.log(e);
 	e.value=""; // CJM - MUST do this to avoid load caching!
     e.click();
 }
@@ -52,7 +50,6 @@ function submitFrameFile()
 
 function completeFrameLoad(imageList,text)
 {
-    console.log('completeFrameLoad');
     console.log(imageList);
     var image,frame,frameId,e;
 
@@ -86,11 +83,11 @@ var e,frame;
 
 	frame = "FRAME"+SelectedFrame;
 	e  = document.getElementById(frame);
-    e.src = BASE_PATH+"/wimages/tools/ezimbanoop.png";
+    e.src = BASE_URL+"/wimages/tools/ezimbanoop.png";
 
 	frame = "FRAMEPATH"+SelectedFrame;
 	e  = document.getElementById(frame);
-    e.src = BASE_PATH+"/wimages/tools/ezimbanoop.png";
+    e.src = BASE_URL+"/wimages/tools/ezimbanoop.png";
 
 	e = document.getElementById('ID_IMAGE_STATS');
 	e.innerHTML = error;
@@ -100,7 +97,6 @@ function chooseFile()
 {
     var e;
 
-    console.log('chooseFile');
 	e  = document.getElementById('ID_SUBMIT_FILE');
 	if (e == null)
 	{
@@ -116,14 +112,12 @@ function chooseFile()
 
     // make sure we're at top of page
     window.location.href = "#home";
-    console.log('e click');
 	e.click();
 }
 
 // this gets executed via the click function in choosefile
 function submitFile() 
 {
-    console.log('submitFile');
     document.getElementById('ID_LOAD_FORM').submit();
 	displayBusyImage();
 }
@@ -172,10 +166,10 @@ function show(id)
 
 function viewCurrentImage()
 {
-	var imageDir = getCurrentImageDir();
-    if (imageDir != null) 
+	var imagePath = getCurrentImagePath();
+    if (imagePath != null) 
     {
-	    document.getElementById('viewimage').href = BASE_PATH+"/displayimage.html?CURRENTIMAGE="+imageDir;
+	    document.getElementById('viewimage').href = BASE_URL+"/displayimage.html?CURRENTIMAGE="+imagePath;
     }
 }
 
@@ -191,10 +185,8 @@ function returnToMainArea()
 
 function selectArg(argValue) 
 {
-    console.log('selectArg');
     var arg1 = document.getElementById('ARG1');
     arg1.value = argValue;
-    console.log('selectArg', arg1);
 
     submitOpForm();
 }
@@ -247,19 +239,23 @@ var e;
 
 function displayCurrentImage()
 {
-
 	var imageURL = ListImageURLS[CurrentPosition];
 	var stats = ListImageStats[CurrentPosition];
 
 	stats = "[" + (CurrentPosition+1) + "/" + ListImageStats.length + "] " + stats;
-    console.log('displayCurrentImage: ' + imageURL);
+
+    // currently inactive.  not clear if needed
+    /*
     document.getElementById('ID_MAIN_IMAGE').onload = function() {
 
 		setHiddenImage(document.getElementById('ID_MAIN_IMAGE'));
     };
+    */
 	document.getElementById('ID_MAIN_IMAGE').src = imageURL;
 	document.getElementById('ID_IMAGE_STATS').innerHTML = stats;
 	setDownloadImageLink(imageURL);
+    displayRegions(ListImageRegions[CurrentPosition]);
+
 }
 
 function hideBusyImage()
@@ -270,7 +266,6 @@ function hideBusyImage()
 function displayBusyImage()
 {
     document.getElementById('ID_MAIN_IMAGE').src = IMAGE_BUSY;
-    console.log('displayBusyImage');
 
 	BusyDisplayed = 1;
 }
@@ -285,23 +280,19 @@ function getCurrentImageURL()
 	return imageURL;
 }
 
-function getCurrentImageDir()
+function getCurrentImagePath()
 {
-    console.log('getCurrentImageDir');
 	var imageURL = getCurrentImageURL();
-    console.log('imageURL', imageURL);
     if (imageURL == null) return null;
 
     var imageArray = imageURL.split("/");
-	return CONVERSIONS_DIR+imageArray[imageArray.length - 1];
+	return CONVERSIONS_PATH+imageArray[imageArray.length - 1];
 }
 
 function setDownloadImageLink(imageURL)
 {
-    console.log('setdownloadimage');
     var downloadLink = document.getElementById('ID_DOWNLOAD_IMAGE');
 	if (downloadLink != null) {
-        console.log(imageURL);
 		downloadLink.href = imageURL;
 	}
 }
@@ -328,7 +319,6 @@ function setHiddenImage(image)
         CurrentImageWidth = tmpImage.width;
         CurrentImageHeight = tmpImage.height;
     };
-
 }
 
 
@@ -400,7 +390,6 @@ function setCurrentStatus(image,text)
 }
 
 
-
 // 
 // add image to the end of the array of possible images 
 //
@@ -420,49 +409,56 @@ function addImage(imageURL,text,regions)
         show('ID_NEXT_IMAGE');
     }
 
-    displayRegions(regions);
 }
 
-function displayRegions(regions)
+function displayRegions(regionList)
 {
-    var e, aspect_x, aspect_y;
 
-    e = document.getElementById('ID_INSIDE');
-    aspect_x = e.offsetWidth / CurrentImageWidth;
-    aspect_y = e.offsetHeight / CurrentImageHeight;
+    // determine how much image dimensions are altered in view (encoded in aspects)
+    var viewedImage = document.getElementById('ID_MAIN_IMAGE');
+    var aspectX = (viewedImage.clientWidth / CurrentImageWidth).toFixed(2);
+    var aspectY = (viewedImage.clientHeight / CurrentImageHeight).toFixed(2);
 
-    e = document.getElementById('ID_CANVAS');
-    var ctx = e.getContext("2d");
-    ctx.canvas.width  = w;
-    ctx.canvas.height = h;
+    // ensure the overlay canvas size is exactly the same as the viewed image
+    var canvas  = document.getElementById('ID_CANVAS');
+    var ctx = canvas.getContext("2d");
+    ctx.canvas.width  = viewedImage.clientWidth;
+    ctx.canvas.height = viewedImage.clientHeight;
+    ctx.clearRect(0, 0, CurrentImageWidth, CurrentImageWidth);
 
-    for (i = 0; i < regions.length; i++) {
+    // for all regions (except the background), draw the region bounding box
+    for (i = 0; i < regionList.length; i++) {
 
-        var region = regions[i];
-        console.log(region);
+        var region = regionList[i];
+        console.log('Region: ', region);
+        if (region.includes('background')) continue;
+
+        // 
+        // assumes images of form: name.score.type.box.suffix
+        // therefore we want the 3rd part of this string (box)
+        // if this form changes then this code must change!
+        //
         var boundingBox = region.split('.')[3];
         var terms = boundingBox.split('_');
-        console.log(boundingBox);
-        var x = terms[0];
-        var y = terms[1];
-        var w = terms[2];
-        var h = terms[3];
-        console.log(x, y, w, h);
+        var x = parseInt(terms[0]);
+        var y = parseInt(terms[1]);
+        var w = parseInt(terms[2]);
+        var h = parseInt(terms[3]);
+        console.log(x, y, w, h, aspectX, aspectY);
 
         ctx.beginPath();
         ctx.lineWidth = "2";
         ctx.strokeStyle = "green";
 
-        var x1 = x * aspect_x;
-        var y1 = y * aspect_y;
-        var width = w * aspect_x;
-        var height = h * aspect_y;
+        var x = x * aspectX;
+        var y = y * aspectY;
+        var width = w * aspectX;
+        var height = h * aspectY;
 
-        ctx.rect(x1, y1, width, height);
+        console.log(x, y, width, height);
+        ctx.rect(x, y, width, height);
         ctx.stroke();
-        ctx.endPath();
     }
-
 }
 
 function nextImage()
@@ -513,9 +509,11 @@ function completeWithNoAction()
 // Invoked once the image has been successfully loaded
 // This function is invoked via javascript injection at ./ops/loadx.php
 //
-function completeImageLoad(image,text,regions)
+function completeImageLoad(imageURL,text,regions,width,height)
 {
-    console.log("completeImageLoad: ", image, text);
+    CurrentImageWidth = width;
+    CurrentImageHeight = height;
+    console.log("completeImageLoad: ", imageURL, text);
 	enableConvertButton();
 
 	if (BusyDisplayed == 0)
@@ -532,12 +530,9 @@ function completeImageLoad(image,text,regions)
     CurrentPosition = 0;
     NextPosition = 0;
 
-	var relImage = image.replace(BASE_PATH,"");
-    console.log(relImage, image);
+	addImage(imageURL,text,regions);
 
-	addImage(image,text,regions);
-
-    document.getElementById('ID_HOME_IMAGE').src = image;
+    document.getElementById('ID_HOME_IMAGE').src = imageURL;
 
     hide('ID_PREVIOUS_IMAGE');
     hide('ID_NEXT_IMAGE');
@@ -549,13 +544,11 @@ function completeImageLoad(image,text,regions)
 // Invoked once a conversion has been executed on an image.
 // This function is invoked the PHP RecordAndComplete() in common.inc.
 //
-function completeImageOp(image,text,regions)
+function completeImageOp(imageURL,text,regions)
 {
+    console.log('completeImageOp', imageURL, text, regions);
 	enableConvertButton();
 
-	//var relImage = image.replace(BASE_PATH,".");
-	var relImage = image.replace(BASE_PATH,"");
-	console.log("completeImageOp: ", image, relImage);
 
 	// if this is true, indicates the op was cancelled via 
 	// delete button prior to completion.
@@ -564,8 +557,7 @@ function completeImageOp(image,text,regions)
 		return;
 	}
 
-
-	addImage(relImage,text,regions);
+	addImage(imageURL, text, regions);
 	hideBusyImage();
 }
 
@@ -584,8 +576,8 @@ function backgroundSubmitOpForm()
     // set current variable to the current image
     // this is the image we will operate on
     // this gets sent to php during the submit
-    var imageDir = getCurrentImageDir();
-	document.getElementById('current').value = imageDir;
+    var imagePath = getCurrentImagePath();
+	document.getElementById('current').value = imagePath;
 
     // execute the fom POSTR
     document.getElementById('ID_OP_SUBMITFORM').submit();
@@ -618,8 +610,8 @@ function executeOp()
 	}
 	displayBusyImage();
 
-    var imageDir = getCurrentImageDir();
-	document.getElementById('current').value = imageDir;
+    var imagePath = getCurrentImagePath();
+	document.getElementById('current').value = imagePath;
 }
 
 function reportOpError(error)
@@ -670,15 +662,15 @@ function getajaxRequest()
 
 function displayOp(op)
 {
-	var imageDir = getCurrentImageDir();
-	var homeImageDir = ListImageURLS[0];
-    if (imageDir != null) 
+	var imagePath = getCurrentImagePath();
+	var homeImageURL = ListImageURLS[0];
+    if (imagePath != null) 
     {
-        console.log("POST: ", imageDir, op);
+        console.log("POST: ", imagePath, op);
         $.post(op, 
             {
-                CURRENTIMAGE: imageDir, 
-                HOMEIMAGE: homeImageDir
+                CURRENTIMAGE: imagePath, 
+                HOMEIMAGE: homeImageURL
             },
             function(data, status) 
             {
@@ -710,7 +702,7 @@ function selectTableItem(id,path,file,status)
 function logTrace(text)
 {
 	text = "JSTRACE: " + text;
-	var log = BASE_PATH+"/zs/jstrace.php";
+	var log = BASE_URL+"/zs/jstrace.php";
 	var params = "VALUE="+text;
     var ajaxRequest = getajaxRequest();
 	ajaxRequest.open("POST",log,true);
@@ -721,7 +713,7 @@ function logTrace(text)
 
 function createSharedImage(imageURL)
 {
-	var target = BASE_PATH+"/zs/jsshare.php";
+	var target = BASE_URL+"/zs/jsshare.php";
 	var params = "VALUE="+imageURL;
     var ajaxRequest = getajaxRequest();
 	ajaxRequest.open("POST",target,true);

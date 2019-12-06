@@ -38,51 +38,54 @@ if (filesize($tmpName) == 0)
 // convert it to a png and store in conversions dir
 // 
 $imageName = NewImageName();
-$outputFileDir = GetConversionDir($imageName);
 $outputFilePath = GetConversionPath($imageName);
-$command = "convert $tmpName $outputFileDir";
+$outputFileURL = GetConversionURL($imageName);
+$command = "convert $tmpName $outputFilePath";
 $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 /*
-    if (file_exists($outputFileDir) == FALSE)
+    if (file_exists($outputFilePath) == FALSE)
     {
         $imageName = StripSuffix($imageName);
-        $outputFileDir = GetConversionDir("$imageName-0$JPGSUFFIX");
-        RecordCommand("ConvertToJPG ANIM SEEN $outputFileDir");
+        $outputFilePath = GetConversionPath("$imageName-0$JPGSUFFIX");
+        RecordCommand("ConvertToJPG ANIM SEEN $outputFilePath");
     }
 */
-RecordCommand("XLOAD: UPLOAD JPG $tmpName $outputFileDir");
+RecordCommand("XLOAD: UPLOAD JPG $tmpName $outputFilePath");
 
-chmod($outputFileDir,0777);
+chmod($outputFilePath,0777);
 $UploadSuccess = TRUE;
 
 
-GetImageAttributes($outputFileDir,$width,$height,$size);
-RecordCommand("LOADX $outputFileDir");
+GetImageAttributes($outputFilePath,$width,$height,$size);
+RecordCommand("LOADX $outputFilePath");
 if ($size > $MAX_FILE_SIZE)
 {
     if (($width > $RESIZE_MAX_WIDTH) || ($height > $RESIZE_MAX_HEIGHT))
     {
-		$outputFileDir = ResizeImage($outputFileDir, $RESIZE_MAX_WIDTH, $RESIZE_MAX_HEIGHT, FALSE);
-		$outputFilePath = GetConversionPath($outputFileDir);
+		$outputFilePath = ResizeImage($outputFilePath, $RESIZE_MAX_WIDTH, $RESIZE_MAX_HEIGHT, FALSE);
+		$outputFileURL = GetConversionURL($outputFilePath);
 		RecordCommand("LOADX RESIZE $size $width $height");
     }
 }
 
 // Exec AI segment analysis of uploaded file
-$command = escapeshellcmd("python ./mlsegment.py $outputFileDir");
+//
+
+$command = escapeshellcmd("python ./mlsegment.py $outputFilePath");
 shell_exec($command);
 RecordCommand("XLOAD SEGMENT ANALYSIS: $command");
 
-$stats = GetStatString($outputFileDir);
-$regionList = GetImageRegions($outputFileDir);
+$stats = GetStatString($outputFilePath);
+$regionList = GetImageRegions($outputFilePath);
 $regions = Implode(',', $regionList);
+RecordCommand("XLOAD REGIONS: $regions");
 
 // inform javascript caller that the image is loaded and ready for display
 $LastOperation = "Image Loaded";
 RecordCommand("LOADX SUCCESS $outputFilePath");
 echo '<html><head><title>-</title></head><body>';
 echo '<script language="JavaScript" type="text/javascript">'."\n";
-echo "parent.completeImageLoad(\"$outputFilePath\",\"$stats\",\"$regions\");";
+echo "parent.completeImageLoad(\"$outputFileURL\",\"$stats\",\"$regions\",\"$width\", \"$height\");";
 echo "\n".'</script></body></html>';
 
 
