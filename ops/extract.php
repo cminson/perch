@@ -2,14 +2,13 @@
 include '../common/common.inc';
 APPLOG('EXTRACT');
 
-$regionList = GetImageRegions($CurrentImage);
+$Title = 'Extract Image';
 
 DisplayTitle('Extract Image Elements');
 DisplayFormStart();
-DisplayRegionPicker('Target Region','REGION', $regionList);
+DisplayRegionPicker('Target Region','REGION');
 DisplayLineSep1();
 DisplayLineSep1();
 DisplayConvertButton();
-
 DisplayFormEnd();
 ?>

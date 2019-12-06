@@ -17,7 +17,7 @@ function ExitWithError($error)
     exit();
 }
 
-RecordCommand("LOAD: tmp=$tmpName source=$sourceName");
+APPLOG("LOAD: tmp=$tmpName source=$sourceName");
 if (empty($sourceName)) 
 { 
     ExitWithError("No File Specified"); 
@@ -37,52 +37,52 @@ if (filesize($tmpName) == 0)
 // if we reached this point, then the image load succeeded
 // convert it to a png and store in conversions dir
 // 
-$imageName = NewImageName();
-$outputFilePath = GetConversionPath($imageName);
-$outputFileURL = GetConversionURL($imageName);
-$command = "convert $tmpName $outputFilePath";
-$execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+$outputFilePath = NewImagePath();
+$script = "convert $tmpName $outputFilePath";
+ExecScript($script);
+
 /*
     if (file_exists($outputFilePath) == FALSE)
     {
         $imageName = StripSuffix($imageName);
         $outputFilePath = GetConversionPath("$imageName-0$JPGSUFFIX");
-        RecordCommand("ConvertToJPG ANIM SEEN $outputFilePath");
+        APPLOG("ConvertToJPG ANIM SEEN $outputFilePath");
     }
 */
-RecordCommand("XLOAD: UPLOAD JPG $tmpName $outputFilePath");
+APPLOG("XLOAD: UPLOAD JPG $tmpName $outputFilePath");
 
 chmod($outputFilePath,0777);
 $UploadSuccess = TRUE;
 
 
 GetImageAttributes($outputFilePath,$width,$height,$size);
-RecordCommand("LOADX $outputFilePath");
+APPLOG("LOADX $outputFilePath");
 if ($size > $MAX_FILE_SIZE)
 {
     if (($width > $RESIZE_MAX_WIDTH) || ($height > $RESIZE_MAX_HEIGHT))
     {
 		$outputFilePath = ResizeImage($outputFilePath, $RESIZE_MAX_WIDTH, $RESIZE_MAX_HEIGHT, FALSE);
-		$outputFileURL = GetConversionURL($outputFilePath);
-		RecordCommand("LOADX RESIZE $size $width $height");
+		APPLOG("LOADX RESIZE $size $width $height");
     }
 }
 
+$outputFileURL = GetConversionURL($outputFilePath);
+
+//
 // Exec AI segment analysis of uploaded file
 //
-
-$command = escapeshellcmd("python ./mlsegment.py $outputFilePath");
-shell_exec($command);
-RecordCommand("XLOAD SEGMENT ANALYSIS: $command");
+$script = escapeshellcmd("python ./mlsegment.py $outputFilePath");
+shell_exec($script);
+APPLOG("XLOAD SEGMENT ANALYSIS: $script");
 
 $stats = GetStatString($outputFilePath);
 $regionList = GetImageRegions($outputFilePath);
 $regions = Implode(',', $regionList);
-RecordCommand("XLOAD REGIONS: $regions");
+APPLOG("XLOAD REGIONS: $regions");
 
 // inform javascript caller that the image is loaded and ready for display
 $LastOperation = "Image Loaded";
-RecordCommand("LOADX SUCCESS $outputFilePath");
+APPLOG("LOADX SUCCESS $outputFilePath");
 echo '<html><head><title>-</title></head><body>';
 echo '<script language="JavaScript" type="text/javascript">'."\n";
 echo "parent.completeImageLoad(\"$outputFileURL\",\"$stats\",\"$regions\",\"$width\", \"$height\");";

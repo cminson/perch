@@ -33,49 +33,88 @@ $RESIZE_MAX_HEIGHT= 800;  // Resize target height when resizing overly large fil
 $IMAGE_MIN_NUMBER = 1000000;
 $IMAGE_MAX_NUMBER = 9999999;
 
-$RecordCommandOn=TRUE;
 if ((isset($_POST['CURRENTIMAGE'])) == TRUE)
 {
     $CurrentImage = $_POST['CURRENTIMAGE'];
     $HomeImage = $_POST['HOMEIMAGE'];
-    RecordCommand("Home: $HomeImage Current: $CurrentImage");
+    APPLOG("Home: $HomeImage Current: $CurrentImage");
 }
 
 $IMAGE_SUFFIX = '.png';
 
 
-/////////////////////////////////////////////////////
-//Common Functions
-////////////////////////////////////////////////////
+function ExecScript($script)
+{
+    $execResult = exec("$script 2>&1", $lines, $resultCode);
+}
+
+function GetConversionURL($path)
+{
+    global $CONVERSION_URL;
+
+    $terms = explode("/",$path);
+    $count = count($terms);
+    return "$CONVERSION_URL".$terms[$count-1];
+}
+
+
+function GetConversionPath($path)
+{
+    global $CONVERSION_PATH;
+
+    $terms = explode("/",$path);
+    $count = count($terms);
+    return "$CONVERSION_PATH".$terms[$count-1];
+}
+
+
+function GetCurrentImagePath() 
+{
+    return GetConversionPath($_POST['CURRENTIMAGE']);
+}
+
+
+function CompleteWithNoAction()
+{
+    global $CurrentImage;
+
+	if (strlen($CurrentImage) < 3)
+	{
+        APPLOG($CurrentImage);
+        echo '<html><head><title>-</title></head><body>';
+        echo '<script language="JavaScript" type="text/javascript">'."\n";
+        echo "parent.completeWithNoAction();";
+        echo "\n".'</script></body></html>';
+		return TRUE;
+	}
+	return FALSE;
+}
+
 
 function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePath)
 {
 
-    $imageName = NewTMPImageName();
-    $cutterFilePath = GetConversionPath($imageName);
-    $command = "convert -transparent white -fuzz 40% $maskFilePath $cutterFilePath";
-    RecordCommand($command);
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+    $cutterFilePath = NewImagePath();
+    $script = "convert -transparent white -fuzz 40% $maskFilePath $cutterFilePath";
+    ExecScript($script);
+    APPLOG($script);
 
-    $imageName = NewTMPImageName();
-    $tmp1FilePath = GetConversionPath($imageName);
-    $command = "composite -geometry +0+0 $cutterFilePath $convertedFilePath $tmp1FilePath";
-    RecordCommand($command);
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+    $tmp1FilePath = NewTMPImagePath();
+    $script = "composite -geometry +0+0 $cutterFilePath $convertedFilePath $tmp1FilePath";
+    ExecScript($script);
+    APPLOG($script);
 
-    $imageName = NewTMPImageName();
-    $tmp2FilePath = GetConversionPath($imageName);
-    $command = "convert -transparent black -fuzz 40% $tmp1FilePath $tmp2FilePath";
-    RecordCommand($command);
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+    $tmp2FilePath = NewTMPImagePath();
+    $script = "convert -transparent black -fuzz 40% $tmp1FilePath $tmp2FilePath";
+    ExecScript($script);
+    APPLOG($script);
 
-    $imageName = NewImageName();
-    $resultFilePath = GetConversionPath($imageName);
-    $command = "composite -geometry +0+0 $tmp2FilePath $originalFilePath $resultFilePath";
-    RecordCommand($command);
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+    $resultFilePath = NewImagePath();
+    $script = "composite -geometry +0+0 $tmp2FilePath $originalFilePath $resultFilePath";
+    ExecScript($script);
+    APPLOG($script);
 
-    RecordCommand("APPLY FINAL $resultFilePath");
+    APPLOG("APPLY FINAL $resultFilePath");
     return $resultFilePath;
 }
 
@@ -89,9 +128,25 @@ function NewImageName()
 }
 
 
+function NewImagePath()
+{
+    global $CONVERSION_PATH;
+
+    return $CONVERSION_PATH.NewImageName();
+}
+
+
 function NewTMPImageName()
 {
     return 'x'.NewImageName();
+}
+
+
+function NewTMPImagePath()
+{
+    global $CONVERSION_PATH;
+
+    return $CONVERSION_PATH.NewTMPImageName();
 }
 
 
@@ -100,34 +155,30 @@ function NewRegionMaskName($imagePath, $objectName, $score)
     global $IMAGE_SUFFIX;
 
     $baseName = basename($imagePath);
-    RecordCommand($baseName);
+    APPLOG($baseName);
     $baseName = explode('.', $baseName)[0];
-    RecordCommand($baseName);
+    APPLOG($baseName);
     $maskName = "m$baseName.$objectName.$score$IMAGE_SUFFIX";
     return $maskName;
 }
 
 
-function RecordCommand($command)
+function APPLOG($text)
 {
 	global $LOGFILE;
-	global $RecordCommandOn;
 
     $page = $_SERVER['PHP_SELF'];
 	$page = str_ireplace(".php", "", $page); 
 	$page = strtoupper(basename($page));
 
-	if ($RecordCommandOn == TRUE)
-	{
 
-		$date = date('m . d . y ');
-		$date = date("H:i:s");
-        $ip = $_SERVER['REMOTE_ADDR'];
-        $fp = fopen($LOGFILE, 'a+');
-		fputs($fp, "$ip $date $command");
-		fputs($fp, "\n");
-		fclose($fp);
-	}
+	$date = date('m . d . y ');
+	$date = date("H:i:s");
+    $ip = $_SERVER['REMOTE_ADDR'];
+    $fp = fopen($LOGFILE, 'a+');
+	fputs($fp, "$ip $date $text");
+	fputs($fp, "\n");
+	fclose($fp);
 }
 
 
@@ -142,6 +193,8 @@ function GetImageRegions($imagePath)
 
     $regionList = array();
     $regionPathList = glob($CONVERSION_PATH.'m'.$matchName.'*');
+    $count = count($regionPathList);
+    APPLOG("GetImageRegions: $matchName  Count: $count");
     foreach ($regionPathList as $regionPath)
     {
         array_push($regionList, basename($regionPath));
@@ -150,38 +203,25 @@ function GetImageRegions($imagePath)
 }
 
 
-function GenerateImageRegions($previousImagePath, $currentImagePath) 
+function DuplicateImageRegions($previousImagePath, $currentImagePath) 
 {
     global $IMAGE_SUFFIX;
 
+
+    APPLOG("GenerareImageRegions $previousImagePath $currentImagePath");
+
     $newRegionList = array();
     $currentImageName = basename($currentImagePath, $IMAGE_SUFFIX);
+    $previousImageName = basename($previousImagePath, $IMAGE_SUFFIX);
     $regionList = GetImageRegions($previousImagePath);
 
     foreach ($regionList as $region)
     {
         $oldRegionPath = GetConversionPath($region);
+        $newRegionName = str_replace($previousImageName, $currentImageName, $region);
+        $newRegionPath = GetConversionPath($newRegionName);
 
-        $regionTerms = explode('.', $region);
-        array_shift($regionTerms);
-        $newRegion = implode('.', $regionTerms);
-        /*
-        foreach ($regionTerms as $term)
-        {
-            RecordCommand("GenerateNewRegions00 $term");
-        }
-        foreach ($regionTerms as $term)
-        {
-            RecordCommand("GenerateNewRegions01 $term");
-        }
-         */
-
-        RecordCommand("GenerateNewRegions1 $region $newRegion");
-
-        $newRegionPath = GetConversionPath("m"."$currentImageName.$newRegion");
-        $command = "cp $oldRegionPath $newRegionPath";
-        $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-        RecordCommand("GenerateNewRegions COMMAND  $command");
+        ExecScript("cp $oldRegionPath $newRegionPath");
 
         array_push($newRegionList, basename($newRegionPath));
     }
@@ -193,7 +233,7 @@ function GenerateImageRegions($previousImagePath, $currentImagePath)
 
 function DisplayRegionPicker($text, $name)
 {
-    global $CONVERSION_PATH, $CurrentImage;
+    global $CurrentImage;
 
     $regionList = GetImageRegions($CurrentImage);
 
@@ -250,7 +290,7 @@ function GetStatString($outputFilePath)
 function ReportError($error)
 {
 	$error = "Error: $error";
-	RecordCommand("ReportError: $error");
+	APPLOG("ReportError: $error");
 	echo '<html><head><title>-</title></head><body>';
 	echo '<script language="JavaScript" type="text/javascript">'."\n";
 	echo "parent.reportOpError(\"$error\");";
@@ -259,12 +299,13 @@ function ReportError($error)
 }
 
 
-function RecordAndComplete($op,$outputFilePath,$regions)
+function RecordAndComplete($op,$outputFilePath,$regionList)
 {
 global $LastOperation;
 
+
     $outputFileURL = GetConversionURL($outputFilePath);
-	RecordCommand("RecordAndComplete FINAL: $outputFileURL $outputFilePath");
+	APPLOG("RecordAndComplete FINAL: $outputFileURL $outputFilePath");
 
     if (file_exists($outputFilePath) == TRUE)
 	{
@@ -274,10 +315,11 @@ global $LastOperation;
 	{
 		// no valid output image, so output an error banner instead
 		$stats = "Error";
-		RecordCommand("RecordAndComplete: Error Image = $outputFilePath");
+		APPLOG("RecordAndComplete: Error Image = $outputFilePath");
 	}
 
-	RecordCommand("$outputFilePath $stats $regions");
+    $regions = Implode(',', $regionList);
+	APPLOG("$outputFilePath $stats $regions");
 	echo '<html><head><title>-</title></head><body>';
 	echo '<script language="JavaScript" type="text/javascript">'."\n";
 	echo "parent.completeImageOp(\"$outputFileURL\",\"$stats\",\"$regions\");";
@@ -306,23 +348,6 @@ global $BASE_URL;
 	print "<center>\n";
 	print "<A class=navlink HREF=\"$BASE_URL\">$return</A>\n";
 	print "</center>\n";
-}
-
-
-function DisplayCurrentEventJSImage($current)
-{
-	if (IsHTMLImageFormat($current) == TRUE)
-	{
-		print "<center>";
-        print "<a href=\"#\" onclick=\"handle(event)\">\n";
-		print "<img class=\"opimage\" id=\"image\" src=\"$current\" alt=\"current image\">\n";
-/*
-		print "<a href=\"$current\">\n";
-		print "<img class=\"opimage\" id=\"image\" src=\"$current\" alt=\"current image\">\n";
-*/
-        print "</a>\n";
-		print "</center>\n";
-	}
 }
 
 
@@ -385,8 +410,8 @@ function DisplayOpButton($label, $opHandler)
 function DetermineImageSize($imagePath,$w,$h)
 {
     $w = $h = 0;
-    $icommand = "identify $imagePath";
-    $execResult = exec("$icommand 2>&1", $lines, $ConvertResultCode);
+    $script = "identify $imagePath";
+    $execResult = exec("$script 2>&1", $lines, $ConvertResultCode);
     $tok = strtok($execResult," ");
     for ($i = 0; $i < 6; $i++)
     {
@@ -403,8 +428,8 @@ function DetermineImageSize($imagePath,$w,$h)
 
 function GetImageAttributes($imagePath, &$width, &$height, &$size)
 {
-    $icommand = "identify $imagePath";
-    $execResult = exec("$icommand 2>&1", $lines, $ConvertResultCode);
+    $script = "identify $imagePath";
+    $execResult = exec("$script 2>&1", $lines, $ConvertResultCode);
     $tok = strtok($execResult," ");
     for ($i = 0; $i < 6; $i++)
     {
@@ -428,9 +453,9 @@ function GetColorCount($imagePath)
 	{
 		return "NA";
 	}
-	//RecordCommand("GetColorCount $imagePath");
-    $command = "identify -format \"%k \" $imagePath";
-    $count = exec("$command 2>&1", $lines, $ConvertResultCode);
+	//APPLOG("GetColorCount $imagePath");
+    $script = "identify -format \"%k \" $imagePath";
+    ExecScript($script);
 	$spc = substr_count($count,' ');
 	if ($spc >= 1)
 	{
@@ -443,75 +468,17 @@ function GetColorCount($imagePath)
 
 function ResizeImage($imagePath, $width, $height, $exactFit)
 {
-    $imageName = NewImageName();
-    $outputFilePath = GetConversionPath($imageName);
+    $outputFilePath = NewImagePath();
     if ($exactFit == TRUE)
-        $command = "convert -resize $width"."x"."$height"."\!"." $imagePath $outputFilePath";
+        $script = "convert -resize $width"."x"."$height"."\!"." $imagePath $outputFilePath";
     else
-        $command = "convert -resize $width"."x"."$height $imagePath $outputFilePath";
+        $script = "convert -resize $width"."x"."$height $imagePath $outputFilePath";
 
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
+    ExecScript("$script 2>&1", $lines, $ConvertResultCode);
     return $outputFilePath;
 }
 
 
-function ResizeTMPImage($imagePath, $width, $height, $exactFit)
-{
-
-    $imageName = basename($imagePath);
-    $imageName = TMPName($imageName);
-    $outputFilePath = GetConversionPath($imageName);
-    if ($exactFit == TRUE)
-        $command = "convert -resize $width"."x"."$height"."\!"." $imagePath $outputFilePath";
-    else
-        $command = "convert -resize $width"."x"."$height $imagePath $outputFilePath";
-
-    RecordCommand("XRESIZE: $command");
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-    return $outputFilePath;
-}
-
-
-function DisplayCurrentClickableImageReturnMain($current,$returnToMainPage)
-{
-	global $WIDTH_IMAGE;
-
-	print "<center>\n";
-	print "<A class=navlink HREF=\"$BASE_URL/index.html?CURRENTIMAGE=$current\">$returnToMainPage</A>\n";
-
-	print "<br><p>";
-	print "<table>\n";
-
-	// If image is a format that can be displayed in HTML,
-	// then display it.  Otherwise, display a link to the this image.
-	$fileName = basename($current);
-	if (IsHTMLImageFormat($current) == TRUE)
-	{
-		print "<TR> <TD align=\"center\" width=\"300\">\n";
-		print "<A href=\"#\"\n";
-		print "onclick=\"handle(event)\">\n";
-		print "<IMG src=\"$current\" id=\"image\" alt=\"Click Here to View Image\"  width=\"$WIDTH_IMAGE\">\n";
-		print "</A>\n";
-		print "</TD> </TR>";
-	}
-	else
-	{
-		print "<TR> <TD class=\"verysmall\" align=\"center\" width=\"300\">\n";
-		print "<A class=navlink href=\"$current\">\n";
-		print "Click Here to View Image\n";
-		print "</A>\n";
-		print "</TD> </TR>";
-	}
-
-	print "<TR> <TD align=\"center\" class=\"image\">\n";
-	print "$fileName\n";
-	print "</TD></TR>\n";
-	print "</TBODY></table>\n";
-	print "</center>";
-}
-
-
-// was 500k and 450
 function CheckFileSize($inputFilePath)
 {
 
@@ -519,7 +486,7 @@ function CheckFileSize($inputFilePath)
 	$outputFilePath = GetConversionURL($inputFilePath);
 
     GetImageAttributes($inputFilePath,$width,$height,$size);
-    RecordCommand("CHECKFILESIZE PRE REDUCE $size ");
+    APPLOG("CHECKFILESIZE PRE REDUCE $size ");
     if ($size > 800000)
     {
         $imageName = NewImageName();
@@ -528,9 +495,9 @@ function CheckFileSize($inputFilePath)
 			$outputFilePath = GetConversionPath($imageName);
 			$outputFileURLh = GetConversionURL($imageName);
 
-			$command = "convert -resize 650x650 $inputFilePath $outputFilePath";
-			$execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-			RecordCommand("CHECKFILE POST REDUCE  $command");
+			$script = "convert -resize 650x650 $inputFilePath $outputFilePath";
+            ExecScript($script);
+			APPLOG("CHECKFILE POST REDUCE  $script");
 		}
     }
 	return $outputFilePath;
@@ -582,20 +549,6 @@ function DisplayColorPicker($text,$setting,$name,$default)
 	print  "<input type=\"text\"  id=\"$name\" size=\"1\" value=\"\" style=\"background-color:$default\">\n";
 }
 
-function DisplayLoopPicker($text,$setting)
-{
-	print  "$text\n";
-	DisplaySep0();
-	print  "<select name=\"$setting\">\n";
-	print  "<option value=0 SELECTED>---\n";
-	print  "<option value=0 >Infinite\n";
-	print  "<option value=100>100 Loops\n";
-	print  "<option value=10>10 Loops\n";
-	print  "<option value=5>5 Loops\n";
-	print  "<option value=1>1 Loops\n";
-	print  "</select>\n";
-}
-
 
 function DisplayNumPicker($text,$setting,$min,$max,$selected)
 {
@@ -613,34 +566,6 @@ function DisplayNumPicker($text,$setting,$min,$max,$selected)
 		$i++;
 	}
 	print  "</select>\n";
-}
-
-
-function DisplayFileNumPicker($text,$setting,$files,$selected)
-{
-	print  "$text\n";
-	DisplaySep0();
-	print  "<select name=\"$setting\">\n";
-
-	$i = 1;
-	foreach ($files as $file)
-	{
-		if ($i == $selected)
-			print  "<option value=\"$file\" selected>$i\n";
-		else
-			print  "<option value=\"$file\">$i\n";
-
-		$i++;
-	}
-	print  "</select>\n";
-}
-
-
-function DisplayFilePicker($text,$setting)
-{
-    print  "$text\n";
-    DisplaySep0();
-	print  "<input size=\"50\" maxLength=\"50\" type=\"FILE\" name=\"FILENAME\">\n";
 }
 
 
@@ -706,7 +631,7 @@ function DisplayFormStart()
 	print  "<input type=\"hidden\" id=\"ARG1\" name = \"ARG1\" value=\"NA\">\n";
 	print  "<input type=\"hidden\" id=\"ARG2\" value=\"NA\">\n";
 
-	RecordCommand("DISPLAY FORMSTART CURRENT=$CurrentImage");
+	APPLOG("DISPLAY FORMSTART CURRENT=$CurrentImage");
 	print "\n";
 }
 
@@ -804,29 +729,6 @@ function DisplayFontSizePicker($text, $name)
 }
 
 
-function DisplayFontSizePicker2($text, $name)
-{
-	print $text;
-	DisplaySep0();
-	print "<select name=\"$name\">\n";
-	print "<option>30\n";
-	print "<option>35\n";
-	print "<option>40\n";
-	print "<option>50\n";
-	print "<option selected>60\n";
-	print "<option>70\n";
-	print "<option>80\n";
-	print "<option>90\n";
-	print "<option>100\n";
-	print "<option>110\n";
-	print "<option>120\n";
-	print "<option>130\n";
-	print "<option>140\n";
-	print "<option>150\n";
-	print "</select>\n";
-}
-
-
 function DisplayPositionPicker($text, $name, $append)
 {
 	print $text;
@@ -877,12 +779,12 @@ function DisplayFuzzPicker($text, $name, $default)
 		if ($i == $default)
 		{
 			print "<option value=\"$i%\" SELECTED>$i%\n";
-			//RecordCommand("<option value=\"$i%\" SELECTED>$i\n");
+			//APPLOG("<option value=\"$i%\" SELECTED>$i\n");
 		}
 		else
 		{
 			print "<option value=\"$i%\">$i%\n";
-			//RecordCommand("<option value=\"$i%\">$i\n");
+			//APPLOG("<option value=\"$i%\">$i\n");
 		}
 	}
 	print "</select>\n";
@@ -906,42 +808,6 @@ function DisplayPercentPicker($text, $name)
 	print  "<option value=\"100\">100%\n";
 	print  "</select>\n";
 }
-
-
-function DisplayPercentPicker2($text, $name,$setting)
-{
-	$v = .01;
-	print $text;
-	DisplaySep0();
-	print "<select name=\"$name\">\n";
-	for ($i=1; $i<=100; $i++)
-	{
-		if ($setting == $i)
-			print "<option value=\"$v\" selected>$i%\n";
-		else
-			print "<option value=\"$v\">$i%\n";
-		$v += .01;
-	}
-	print "</select>\n";
-
-/*
-	print $text;
-	DisplaySep0();
-	print "<select name=\"$name\">\n";
-	print "<option value=\".10\" selected>10%\n";
-	print "<option value=\".20\">20%\n";
-	print "<option value=\".30\">30%\n";
-	print "<option value=\".40\">40%\n";
-	print "<option value=\".50\">50%\n";
-	print "<option value=\".60\">60%\n";
-	print "<option value=\".70\">70%\n";
-	print "<option value=\".80\">80%\n";
-	print "<option value=\".90\">90%\n";
-	print "<option value=\"1.0\">100%\n";
-	print "</select>\n";
-*/
-}
-
 
 
 function DisplaySizePicker($text, $name)
@@ -1042,52 +908,6 @@ function DisplayLMHExtPicker($text, $name)
 	print "</select>\n";
 }
 
-
-function DisplayLMHExt2Picker($text, $name)
-{
-	print $text;
-	DisplaySep0();
-	print "<select name=\"$name\">\n";
-	print "<option value=\"20%\">1\n";
-	print "<option value=\"15%\">2\n";
-	print "<option value=\"10%\" selected>3\n";
-	print "<option value=\"7%\">4\n";
-	print "<option value=\"4%\">5\n";
-	print "</select>\n";
-}
-
-
-function DisplayLMHExt3Picker($text, $name)
-{
-	print $text;
-	DisplaySep0();
-	print "<select name=\"$name\">\n";
-	print "<option value=\"5\">1\n";
-	print "<option value=\"4\">2\n";
-	print "<option value=\"3\" selected>3\n";
-	print "<option value=\"2\">4\n";
-	print "<option value=\"1\">5\n";
-	print "</select>\n";
-}
-
-function DisplayTransPicker($text, $name)
-{
-	print $text;
-	DisplaySep0();
-	print "<select name=\"$name\">\n";
-	print "<option value=\"1.0\">100 (100% Solid)\n";
-	print "<option value=\"0.9\">90\n";
-	print "<option value=\"0.8\">80\n";
-	print "<option value=\"0.7\">70\n";
-	print "<option value=\"0.6\" selected>60\n";
-	print "<option value=\"0.5\">50\n";
-	print "<option value=\"0.4\">40\n";
-	print "<option value=\"0.3\">30\n";
-	print "<option value=\"0.2\">20\n";
-	print "<option value=\"0.1\">10\n";
-	print "<option value=\"0.0\">0 (100% Transparent)\n";
-	print "</select>\n";
-}
 
 function DisplayTextColorPicker($text, $name)
 {
@@ -1214,21 +1034,6 @@ function DisplayHiddenText($text,$name,$size,$default)
 }
 
 
-function DisplaySlowNote()
-{
-global $X_SLOWNOTE;
-
-	print  "<center><P class=\"mild1\">$X_SLOWNOTE</P></center>\n";
-}
-
-
-function DisplayAltNote($text)
-{
-global $X_SLOWNOTE;
-
-	print  "<center><P class=\"mild1\">$text</P></center>\n";
-}
-
 
 function DisplayDivColorPicker()
 {
@@ -1286,42 +1091,6 @@ global $BASE_URL;
 }
 
 
-function CompleteWithNoAction()
-{
-    global $CurrentImage;
-
-	if (strlen($CurrentImage) < 3)
-	{
-        RecordCommand($CurrentImage);
-        echo '<html><head><title>-</title></head><body>';
-        echo '<script language="JavaScript" type="text/javascript">'."\n";
-        echo "parent.completeWithNoAction();";
-        echo "\n".'</script></body></html>';
-		return TRUE;
-	}
-	return FALSE;
-}
-
-
-function GetConversionURL($path)
-{
-    global $CONVERSION_URL;
-
-    $terms = explode("/",$path);
-    $count = count($terms);
-    return "$CONVERSION_URL".$terms[$count-1];
-}
-
-
-function GetConversionPath($path)
-{
-    global $CONVERSION_PATH;
-
-    $terms = explode("/",$path);
-    $count = count($terms);
-    return "$CONVERSION_PATH".$terms[$count-1];
-}
-
-
 
 ?>
+
