@@ -3,7 +3,6 @@
 # Author:  Christopher Minson
 #
 #
-#
 import os
 import sys
 import random
