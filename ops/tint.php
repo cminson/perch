@@ -1,11 +1,10 @@
 <?php
 include '../common/common.inc';
+APPLOG("TINT");
 
 $Title = 'Tint';
 
-RecordCommand("TINT REGION $current");
-$regionList = GetImageRegions($current);
-
+$regionList = GetImageRegions($CurrentImage);
 DisplayTitle($Title);
 DisplayFormStart();
 DisplayRegionPicker('Target Region','REGION',$regionList);
