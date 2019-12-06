@@ -7,7 +7,6 @@ $inputFilePath = GetCurrentImagePath();
 $TintColor = $_POST['COLOR'];
 $TintLevel = $_POST['TINTLEVEL'];
 $Region = $_POST['REGION'];
-$regionList = GetImageRegions($inputFilePath);
 
 if (strlen($TintColor) < 2) { $TintColor = "FF0000"; }
 $TintColor = str_replace("#", "", $TintColor);
@@ -29,7 +28,7 @@ if ($Region != 'ALL') {
     $LastOperation .=  " $Region";
 }
 
-DuplicateImageRegions($inputFilePath, $outputFilePath);
-RecordAndComplete("TINT",$outputFilePath,$regionList);
+$regionList = DuplicateImageRegions($inputFilePath, $outputFilePath);
+InformUILayer("TINT",$outputFilePath,$regionList);
 
 ?>

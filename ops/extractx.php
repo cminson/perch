@@ -2,7 +2,7 @@
 include '../common/common.inc';
 $LastOperation = 'Extract Image: ';
 
-$inputFilePath = GetCurrentImagePath();
+$originalFilePath = $inputFilePath = GetCurrentImagePath();
 
 $Region = $_POST['REGION'];
 if ($Region == 'ALL') {
@@ -25,12 +25,12 @@ $script = "composite -geometry +0+0 $cutterFilePath $inputFilePath $outputFilePa
 ExecScript($script);
 APPLOG("$script");
 
-$inputFilePath = $outputFilePath;
+$tmpFilePath = $outputFilePath;
 $outputFilePath = NewImagePath();
-$script = "convert -fill white -opaque black $inputFilePath $outputFilePath";
+$script = "convert -fill white -opaque black $tmpFilePath $outputFilePath";
 ExecScript($script);
 APPLOG("$script");
 
-DuplicateImageRegions($inputFilePath, $outputFilePath);
-RecordAndComplete('EXTRACT',$outputFilePath,FALSE);
+$regionList = DuplicateImageRegions($originalFilePath, $outputFilePath);
+InformUILayer('EXTRACT', $outputFilePath, $regionList);
 ?>

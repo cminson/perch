@@ -1,12 +1,11 @@
 <?php
 include '../common/common.inc';
 
-//if (CompleteWithNoAction()) return;
+$inputFilePath = GetCurrentImagePath();
 
 $Arg = ($_POST['ARG1']);
 $Region = $_POST['REGION'];
 
-$inputFileDir = GetConversionDir($_POST['CURRENTIMAGE']);
 
 switch ($Arg)
 {
@@ -52,26 +51,21 @@ case "DOWN_SHARP":
 	break;
 };
 
-$targetName = NewImageName($inputFileDir);
-$outputFileDir = GetConversionDir($targetName);
-$outputFilePath = GetConversionPath($targetName);
-$command = "$command $inputFileDir $outputFileDir";
+$outputFilePath = NewImagePath();
+$command = "$command $inputFilePath $outputFilePath";
 $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-RecordCommand("ADJUST $Arg $command $outputFilePath");
+APPLOG("ADJUST $Arg $command $outputFilePath");
 
 if ($Region != 'ALL') {
 
-    RecordCommand("Applying Region Operation").
-    $maskFileDir = GetConversionDir($Region);
-    $outputFileDir = ApplyRegionOperation($inputFileDir, $outputFileDir, $maskFileDir);
-    $outputFilePath = GetConversionPath($outputFileDir);
+    APPLOG("Applying Region Operation").
+    $maskFilePath = GetConversionPath($Region);
+    $outputFilePath = ApplyRegionOperation($inputFilePath, $outputFilePath, $maskFilePath);
 }
 
-RecordCommand("FINAL $Arg $command $outputFilePath");
+APPLOG("FINAL $Arg $command $outputFilePath");
 
-RecordAndComplete($LastOperation,$outputFilePath,TRUE);
-
-
-
+$regionList = DuplicateImageRegions($originalFilePath, $outputFilePath);
+InformUILayer($LastOperation, $outputFilePath, $regionList);
 
 ?>

@@ -1,8 +1,5 @@
 <?php
 include '../common/common.inc';
-
-if (CompleteWithNoAction()) return;
-
 $LastOperation = 'Labeled';
 
 $labelColor = $_POST['LABELCOLOR'];
@@ -12,6 +9,7 @@ $font = $_POST['FONTS'];
 $label1 = $_POST['LABEL1'];
 $label2 = $_POST['LABEL2'];
 $position = $_POST['POSITION'];
+$Region = $_POST['REGION'];
 
 if (isset($font) == FALSE) $font = "Helvetica";
 if (isset($pointSize) == FALSE) $pointSize = 20;
@@ -21,39 +19,45 @@ if (strlen($label2) > 0)
 else
     $label = "$label1";
 
-$inputFileDir = $_POST['CURRENTIMAGE'];
-$inputFileDir = "$BASE_DIR$inputFileDir";
-$inputFileName = basename($inputFileDir);
+$originalFilePath = $inputFilePath = GetCurrentImagePath();
+$inputFilePath = ExtractRegionImage($inputFilePath, $Region);
 
 if ($position == 'Append')
 {
-    $targetName = NewName($inputFileDir);
-    $outputFileDir = GetConversionDir($targetName);
-    $outputFilePath = GetConversionPath($targetName);
+    $outputFilePath = GetConversionPath();
 
-    $command = "montage -background $backgroundColor -fill $labelColor -geometry +0+0 -font $font -pointsize $pointSize -label \"$label\"  \"$inputFileDir\" \"$outputFileDir\"";
+    $script = "montage -background $backgroundColor -fill $labelColor -geometry +0+0 -font $font -pointsize $pointSize -label \"$label\"  \"$inputFilePath\" \"$outputFilePath\"";
 
 }
 else
 {
-    $targetName = NewNamePNG();
-    $labelDir = GetConversionDir($targetName);
-    $command = "convert -background $backgroundColor -fill $labelColor -font $font -pointsize $pointSize label:\"$label\" $labelDir";
-    $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-    RecordCommand("XLABEL $command");
+    $labelPath = NewImagePath();
+    $script = "convert -background $backgroundColor -fill $labelColor -font $font -pointsize $pointSize label:\"$label\" $labelPath";
+    ExecScript($script);
+    APPLOG("XLABEL $script");
 
-    $targetName = NewName($inputFileDir);
-    $outputFileDir = GetConversionDir($targetName);
-    $outputFilePath = GetConversionPath($targetName);
-    $command = "composite $labelDir -gravity $position $inputFileDir $outputFileDir";
-
+    $outputFilePath = NewImagePath();
+    $script = "composite $labelPath -gravity $position $inputFilePath $outputFilePath";
 }
 
-RecordCommand("XLABEL $command");
-$execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
-RecordCommand("XLABEL FINAL $outputFilePath");
+APPLOG("XLABEL $script");
+ExecScript($script);
+APPLOG("XLABEL FINAL $outputFilePath");
 
-$outputFilePath = CheckFileSize($outputFileDir);
-RecordAndComplete("LABEL",$outputFilePath,FALSE);
+$x = $TESTX;
+$y = $TESTY;
+if ($Region != 'ALL') 
+{
+    $regionFilePath = $outputFilePath;
+    $outputFilePath = NewImagePath();
+    $script = "composite -geometry +$x+$y $regionFilePath $originalFilePath $outputFilePath";
+    ExecScript($script);
+    APPLOG($script);
+    $LastOperation .=  " $Region";
+}
+
+
+$regionList = DuplicateImageRegions($inputFilePath, $outputFilePath);
+InformUILayer('LABEL',$outputFilePath,$regionList);
 
 ?>

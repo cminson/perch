@@ -33,6 +33,10 @@ $RESIZE_MAX_HEIGHT= 800;  // Resize target height when resizing overly large fil
 $IMAGE_MIN_NUMBER = 1000000;
 $IMAGE_MAX_NUMBER = 9999999;
 
+// CJM DEV
+$TESTX = 0;
+$TESTY = 0;
+
 if ((isset($_POST['CURRENTIMAGE'])) == TRUE)
 {
     $CurrentImage = $_POST['CURRENTIMAGE'];
@@ -46,6 +50,54 @@ $IMAGE_SUFFIX = '.png';
 function ExecScript($script)
 {
     $execResult = exec("$script 2>&1", $lines, $resultCode);
+}
+
+function ExtractRegionImage($imageFilePath, $region)
+{
+    global $TESTX, $TESTY;
+
+    if ($region == 'ALL') return $imageFilePath;
+
+    $regionTerms = explode('.', $region);
+    $termList = $regionTerms[3];
+    $dims = explode('_', $termList);
+    $x = intval($dims[0]);
+    $y = intval($dims[1]);
+    $w = intval($dims[2]);
+    $h = intval($dims[3]);
+    $cropDim = $w."x$h+$x+$y";
+    APPLOG("$cropDim $x $y $w $h");
+    $TESTX = $x;
+    $TESTY = $y;
+
+    $outputFilePath = NewImagePath();
+    $maskFilePath = GetConversionPath($region);
+    APPLOG("maskFilePath $maskFilePath");
+
+    $cutterFilePath = NewTMPImagePath();
+    $script = "convert -transparent white -fuzz 40% $maskFilePath $cutterFilePath";
+    ExecScript($script);
+    APPLOG("$script");
+
+    $outputFilePath = NewTMPImagePath();
+    $script = "composite -geometry +0+0 $cutterFilePath $imageFilePath $outputFilePath";
+    ExecScript($script);
+    APPLOG("$script");
+
+    $tmpFilePath = $outputFilePath;
+    $outputFilePath = NewImagePath();
+    $script = "convert -fill white -opaque black $tmpFilePath $outputFilePath";
+    ExecScript($script);
+    APPLOG("$script");
+
+    $tmpFilePath = $outputFilePath;
+    $outputFilePath = NewImagePath();
+    $script = "convert -crop $cropDim -transparent white $tmpFilePath $outputFilePath";
+    ExecScript($script);
+    APPLOG("$script");
+
+    return $outputFilePath;
+
 }
 
 function GetConversionURL($path)
@@ -207,8 +259,7 @@ function DuplicateImageRegions($previousImagePath, $currentImagePath)
 {
     global $IMAGE_SUFFIX;
 
-
-    APPLOG("GenerareImageRegions $previousImagePath $currentImagePath");
+    APPLOG("Duplicate Regions:  $previousImagePath $currentImagePath");
 
     $newRegionList = array();
     $currentImageName = basename($currentImagePath, $IMAGE_SUFFIX);
@@ -227,7 +278,6 @@ function DuplicateImageRegions($previousImagePath, $currentImagePath)
     }
 
     return $newRegionList;
-
 }
 
 
@@ -274,13 +324,11 @@ function GetStatString($outputFilePath)
     global $X_SIZE, $X_DIMENSIONS, $X_COLORCOUNT, $X_HISTORY, $LastOperation;
 
 	GetImageAttributes($outputFilePath,$width,$height,$size);
-    $colors = GetColorCount($outputFilePath);
 
-    $X_COLORS = "Colors";
     $psize = round(($size / 1000),0);
     $psize = $psize."kb";
     $pdim = "$width"."x"."$height";
-    $stats = "$X_SIZE: $psize $pdim $X_COLORS: $colors&nbsp;&nbsp;[$LastOperation]";
+    $stats = "$X_SIZE: $psize $pdim &nbsp;&nbsp;[$LastOperation]";
 
 	$stats = "$stats";
 	return ($stats);
@@ -299,13 +347,13 @@ function ReportError($error)
 }
 
 
-function RecordAndComplete($op,$outputFilePath,$regionList)
+function InformUILayer($op,$outputFilePath,$regionList)
 {
 global $LastOperation;
 
 
     $outputFileURL = GetConversionURL($outputFilePath);
-	APPLOG("RecordAndComplete FINAL: $outputFileURL $outputFilePath");
+	APPLOG("InformUILayer FINAL: $outputFileURL $outputFilePath");
 
     if (file_exists($outputFilePath) == TRUE)
 	{
@@ -315,7 +363,7 @@ global $LastOperation;
 	{
 		// no valid output image, so output an error banner instead
 		$stats = "Error";
-		APPLOG("RecordAndComplete: Error Image = $outputFilePath");
+		APPLOG("InformUILayer: Error Image = $outputFilePath");
 	}
 
     $regions = Implode(',', $regionList);
@@ -443,26 +491,6 @@ function GetImageAttributes($imagePath, &$width, &$height, &$size)
     }
     if (file_exists($imagePath) == TRUE)
 		$size = filesize($imagePath);
-}
-
-
-function GetColorCount($imagePath)
-{
-
-    if (file_exists($imagePath) == FALSE)
-	{
-		return "NA";
-	}
-	//APPLOG("GetColorCount $imagePath");
-    $script = "identify -format \"%k \" $imagePath";
-    ExecScript($script);
-	$spc = substr_count($count,' ');
-	if ($spc >= 1)
-	{
-		$a = explode(' ',$count);
-		$count = $a[0];
-	}
-	return $count;
 }
 
 

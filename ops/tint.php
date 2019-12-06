@@ -1,10 +1,8 @@
 <?php
 include '../common/common.inc';
-APPLOG("TINT");
+APPLOG('TINT');
 
-$Title = 'Tint Image';
-
-DisplayTitle($Title);
+DisplayTitle('Tint Image');
 DisplayFormStart();
 DisplayRegionPicker('Target Region','REGION');
 DisplaySep1();
