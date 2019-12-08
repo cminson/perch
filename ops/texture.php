@@ -1,18 +1,17 @@
 <?php
-include '../common/common.inc';
 
-$regionList = GetImageRegions();
+include '../common/common.inc';
+APPLOG('Texture');
+
+$labels = array('Glass Tiles', 'Granite', 'History', 'Ice', 'Marble', 'Metal', 'Old Paper', 'Sand', 'Silk', 'Wet Clay', 'Ripples', 'Snakes', 'Curves');
+$args = array('GLASSTILES', 'GRANITE', 'HISTORY', 'ICE', 'MARBLE', 'METAL', 'OLDPAPER', 'SAND', 'SILK', 'WETCLAY', 'RIPPLES', 'SNAKES', 'CURVES');
 
 DisplayTitle('Reformat: Change Image Format');
 DisplayFormStart();
-
-$labels = array('Marble', 'Granite', 'Sand', 'Metal');
-$args = array('MARBLE', 'GRANITE', 'SAND', 'METAL');
-
-DisplayRegionPicker('Target Region','REGION',$regionList);
+DisplayRegionPicker('Target Region','REGION');
 DisplayLineSep1();
 DisplaySelectionPicker($labels, $args);
-
 DisplayLineSep1();
 DisplayFormEnd();
+
 ?>

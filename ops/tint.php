@@ -1,4 +1,5 @@
 <?php
+
 include '../common/common.inc';
 APPLOG('TINT');
 
@@ -11,4 +12,5 @@ DisplaySep1();
 DisplayPercentPicker('Tint Level','TINTLEVEL','TINTLEVEL');
 DisplayConvertButton();
 DisplayFormEnd();
+
 ?>

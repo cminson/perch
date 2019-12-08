@@ -24,5 +24,4 @@ DisplayColorSelector('Background Color', 'Black', 'BACKGROUNDCOLOR', True);
 DisplaySep1();
 DisplayConvertButton();
 DisplayFormEnd();
-
 ?>

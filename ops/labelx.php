@@ -44,8 +44,8 @@ APPLOG("XLABEL $script");
 ExecScript($script);
 APPLOG("XLABEL FINAL $outputFilePath");
 
-$x = $TESTX;
-$y = $TESTY;
+$x = $ExtractedRegionOriginX;
+$y = $ExtractedRegionOriginY;
 if ($Region != 'ALL') 
 {
     $regionFilePath = $outputFilePath;
@@ -57,7 +57,7 @@ if ($Region != 'ALL')
 }
 
 
-$regionList = DuplicateImageRegions($inputFilePath, $outputFilePath);
+$regionList = DuplicateImageRegions($originalFilePath, $outputFilePath);
 InformUILayer('LABEL',$outputFilePath,$regionList);
 
 ?>

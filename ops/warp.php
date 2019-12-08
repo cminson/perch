@@ -1,12 +1,12 @@
 <?php
 include '../common/common.inc';
+APPLOG('WARP');
+
+$labels = array('Explode', 'Fractalize', 'Implode', 'Kaleidoscope', 'Pixellate', 'Splice', 'Stretch', 'Swirl', 'Tunnel', 'Wave');
+$args = array('EXPLODE', 'FRACTALIZE', 'IMPLODE', 'KAL', 'PIXEL', 'SPLICE', 'STRETCH', 'SWIRL', 'TUNNEL', 'WAVE');
 
 DisplayTitle('Warp Image');
 DisplayFormStart();
-
-$labels = array('Encircle', 'Explode', 'Fractalize', 'Implode', 'Kaleidoscope', 'Pixellate', 'Splice', 'Stretch', 'Swirl', 'Tunnel', 'Wave');
-$args = array('ENCIRCLE', 'EXPLODE', 'FRACTALIZE', 'IMPLODE', 'KAL', 'PIXEL', 'SPLICE', 'STRETCH', 'SWIRL', 'TUNNEL', 'WAVE');
-
 DisplayRegionPicker('Target Region','REGION');
 DisplayLineSep1();
 DisplayNumPicker('Setting','SETTING',1, 10, 1);

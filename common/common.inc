@@ -16,6 +16,7 @@ $URL_IMAGE_BUSY = "$BASE_URL/resources/utils/smallbusyicon.gif";
 $PATH_IMAGE_EX01 = $BASE_PATH."/resources/defaults/tab.jpg";
 $PATH_FONTS = "$BASE_PATH/resources/fonts/fontlist.txt";
 $PATH_STYLES = "$BASE_PATH/resources/styles/";
+$PATH_TEXTURES = "$BASE_PATH/resources/textures/";
 
 $PATH_OPS = './ops/';
 
@@ -33,9 +34,13 @@ $RESIZE_MAX_HEIGHT= 800;  // Resize target height when resizing overly large fil
 $IMAGE_MIN_NUMBER = 1000000;
 $IMAGE_MAX_NUMBER = 9999999;
 
-// CJM DEV
-$TESTX = 0;
-$TESTY = 0;
+//
+// These globals are set indirectly when an operation extracts a region
+// for processing. When needed, these globals can then be used to access
+// the x,y origin coordinates of the region.
+// 
+$ExtractedRegionOriginX = 0;
+$ExtractedRegionOriginY = 0;
 
 if ((isset($_POST['CURRENTIMAGE'])) == TRUE)
 {
@@ -45,6 +50,7 @@ if ((isset($_POST['CURRENTIMAGE'])) == TRUE)
 }
 
 $IMAGE_SUFFIX = '.png';
+$GIF_SUFFIX = '.gif';
 
 
 function ExecScript($script)
@@ -54,7 +60,7 @@ function ExecScript($script)
 
 function ExtractRegionImage($imageFilePath, $region)
 {
-    global $TESTX, $TESTY;
+    global $ExtractedRegionOriginX, $ExtractedRegionOriginY;
 
     if ($region == 'ALL') return $imageFilePath;
 
@@ -67,8 +73,8 @@ function ExtractRegionImage($imageFilePath, $region)
     $h = intval($dims[3]);
     $cropDim = $w."x$h+$x+$y";
     APPLOG("$cropDim $x $y $w $h");
-    $TESTX = $x;
-    $TESTY = $y;
+    $ExtractedRegionOriginX = $x;
+    $ExtractedRegionOriginY = $y;
 
     $outputFilePath = NewImagePath();
     $maskFilePath = GetConversionPath($region);
@@ -86,7 +92,7 @@ function ExtractRegionImage($imageFilePath, $region)
 
     $tmpFilePath = $outputFilePath;
     $outputFilePath = NewImagePath();
-    $script = "convert -fill white -opaque black $tmpFilePath $outputFilePath";
+    $script = "convert -fill white -opaque black -fuzz 1% $tmpFilePath $outputFilePath";
     ExecScript($script);
     APPLOG("$script");
 
@@ -147,7 +153,7 @@ function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePa
 {
 
     $cutterFilePath = NewImagePath();
-    $script = "convert -transparent white -fuzz 40% $maskFilePath $cutterFilePath";
+    $script = "convert -transparent white -fuzz 10% $maskFilePath $cutterFilePath";
     ExecScript($script);
     APPLOG($script);
 
@@ -157,7 +163,7 @@ function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePa
     APPLOG($script);
 
     $tmp2FilePath = NewTMPImagePath();
-    $script = "convert -transparent black -fuzz 40% $tmp1FilePath $tmp2FilePath";
+    $script = "convert -transparent black -fuzz 10% $tmp1FilePath $tmp2FilePath";
     ExecScript($script);
     APPLOG($script);
 
@@ -168,6 +174,46 @@ function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePa
 
     APPLOG("APPLY FINAL $resultFilePath");
     return $resultFilePath;
+}
+
+
+function RemoveTransparency($imagePath)
+{
+    global $IMAGE_SUFFIX, $IMAGE_MIN_NUMBER, $IMAGE_MAX_NUMBER;
+    $suffix = '.jpg';
+
+    $imageName = 'x'.rand($IMAGE_MIN_NUMBER,$IMAGE_MAX_NUMBER).$suffix;
+    $outputFilePath = GetConversionPath($imageName);
+    $script = "convert $imagePath $outputFilePath";
+    ExecScript($script);
+    APPLOG($script);
+
+    $inputFilePath = $outputFilePath;
+    $imageName = rand($IMAGE_MIN_NUMBER,$IMAGE_MAX_NUMBER).$IMAGE_SUFFIX;
+    $outputFilePath = GetConversionPath($imageName);
+    $script = "convert $inputFilePath $outputFilePath";
+    ExecScript($script);
+    APPLOG($script);
+
+    return $outputFilePath;
+}
+
+function ReshapeToRegion($region, $imagePath)
+{
+    $regionTerms = explode('.', $region);
+    $termList = $regionTerms[3];
+    $dims = explode('_', $termList);
+    $x = intval($dims[0]);
+    $y = intval($dims[1]);
+    $w = intval($dims[2]);
+    $h = intval($dims[3]);
+    $resizeDim = $w."x$h+$x+$y!";
+    $outputFilePath = NewTMPImagePath();
+    $script = "convert -transparent White -resize $resizeDim $imagePath $outputFilePath";
+    ExecScript($script);
+    APPLOG($script);
+
+    return $outputFilePath;
 }
 
 
