@@ -170,6 +170,7 @@ function viewCurrentImage()
     if (imagePath != null) 
     {
 	    document.getElementById('viewimage').href = BASE_URL+"/displayimage.html?CURRENTIMAGE="+imagePath;
+        console.log(BASE_URL+"/displayimage.html?CURRENTIMAGE="+imagePath);
     }
 }
 

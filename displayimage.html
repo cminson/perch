@@ -6,8 +6,9 @@
 include './common/common.inc';
 
 $current = $_GET['CURRENTIMAGE'];
+APPLOG("DISPLAYIMAGE: $current");
+
 $current = rawurldecode($current);
-RecordCommand("DISPLAYIMAGE: $current");
-$href = "$BASE_PATH$current";
+$href = "$BASE_URL$current";
 print "<meta http-equiv=\"refresh\" content=\"1;url=$href\">\n";
 ?>

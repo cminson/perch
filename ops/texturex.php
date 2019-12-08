@@ -15,6 +15,12 @@ $outputFilePath = NewImagePath();
 
 switch ($ARG_TEXTURE)
 {
+case 'CURVES':
+    $LastOperation .= ": Curves";
+    $script = "composite -tile $textureImagePath -compose Hardlight $inputFilePath $outputFilePath";
+    ExecScript($script);
+	break;
+
 case 'GRANITE':
     $LastOperation .= ": Granite";
     $script = "convert -blur 1x5  -shade 20x121.78 -normalize -emboss 4 $inputFilePath $outputFilePath";
@@ -31,6 +37,12 @@ case 'SILK':
     $script = "composite $textureImagePath  -tile  -compose Hardlight $inputFilePath $outputFilePath";
     ExecScript($script);
     break;
+
+case 'GOLD':
+    $LastOperation .= ": Gold Bar";
+	$script = "convert -shade 60x21.78 -normalize -raise 9x9 -fill gold -tint 100 $inputFilePath $outputFilePath";
+    $execResult = exec("$script 2>&1", $lines, $ConvertResultCode);
+	break;
 
 case 'HISTORY':
     $LastOperation .= ": Historical";
@@ -112,18 +124,6 @@ case 'OLDPAPER':
     ExecScript($script);
     break;
 
-case 'SAND':
-    $LastOperation .= ": Sand";
-    $script = "convert -emboss 3 -blur 0x1 -shade 60x21.78 -normalize -sepia-tone 65% $inputFilePath $outputFilePath";
-    ExecScript($script);
-    break;
-
-case 'WETCLAY':
-    $LastOperation .= ": Wet Clay";
-    $script = "convert -shade 120x21.78 -sepia-tone 95% -blur 0x1 -raise 5x5 -paint 4 $inputFilePath $outputFilePath";
-    ExecScript($script);
-    break;
-
 case 'RIPPLES':
     $LastOperation .= ": Pond Ripples";
     $outputFilePath = NewImagePath();
@@ -131,33 +131,31 @@ case 'RIPPLES':
     ExecScript($script);
     break;
 
+case 'SAND':
+    $LastOperation .= ": Sand";
+    $script = "convert -emboss 3 -blur 0x1 -shade 60x21.78 -normalize -sepia-tone 65% $inputFilePath $outputFilePath";
+    ExecScript($script);
+    break;
+
+case 'SKETCH':
+    $LastOperation .= ": sketch";
+	$script = "convert $inputFilePath -colorspace gray -sketch 0x20+120 $outputFilePath";
+    ExecScript($script);
+	break;
+
 case 'SNAKES':
     $LastOperation .= ": Snakes";
     $script = "composite -tile $textureImagePath -compose Hardlight $inputFilePath $outputFilePath";
     ExecScript($script);
 	break;
 
-case 'CURVES':
-    $LastOperation .= ": Curves";
-    $script = "composite -tile $textureImagePath -compose Hardlight $inputFilePath $outputFilePath";
+case 'WETCLAY':
+    $LastOperation .= ": Wet Clay";
+    $script = "convert -shade 120x21.78 -sepia-tone 95% -blur 0x1 -raise 5x5 -paint 4 $inputFilePath $outputFilePath";
     ExecScript($script);
-	break;
+    break;
 
-case 'brick':
-    $LastOperation .= ": brick";
-    $script = "composite -tile $textureImagePath -compose Hardlight $inputFilePath $outputFilePath";
-    $execResult = exec("$script 2>&1", $lines, $ConvertResultCode);
-	break;
-case 'goldbar':
-    $LastOperation .= ": Gold Bar";
-	$script = "convert -shade 60x21.78 -normalize -raise 9x9 -fill gold -tint 100 $inputFilePath $outputFilePath";
-    $execResult = exec("$script 2>&1", $lines, $ConvertResultCode);
-	break;
-case 'sketch':
-    $LastOperation .= ": sketch";
-	$script = "convert $inputFilePath -colorspace gray -sketch 0x20+120 $outputFilePath";
-    $execResult = exec("$script 2>&1", $lines, $ConvertResultCode);
-	break;
+
 }
 
 APPLOG("$script");
