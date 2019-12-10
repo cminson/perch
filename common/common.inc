@@ -42,9 +42,12 @@ $IMAGE_MAX_NUMBER = 9999999;
 $ExtractedRegionOriginX = 0;
 $ExtractedRegionOriginY = 0;
 
+$CurrentImage = $CurrentRegions = $HomeImage = '';
+
 if ((isset($_POST['CURRENTIMAGE'])) == TRUE)
 {
     $CurrentImage = $_POST['CURRENTIMAGE'];
+    $CurrentRegions = $_POST['CURRENTREGIONS'];
     $HomeImage = $_POST['HOMEIMAGE'];
     APPLOG("Home: $HomeImage Current: $CurrentImage");
 }
@@ -55,7 +58,8 @@ $GIF_SUFFIX = '.gif';
 
 function ExecScript($script)
 {
-    $execResult = exec("$script 2>&1", $lines, $resultCode);
+    return exec("$script 2>&1", $lines, $resultCode);
+
 }
 
 function ExtractRegionImage($imageFilePath, $region)
@@ -153,7 +157,7 @@ function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePa
 {
 
     $cutterFilePath = NewImagePath();
-    $script = "convert -transparent white -fuzz 10% $maskFilePath $cutterFilePath";
+    $script = "convert -transparent white -fuzz 1% $maskFilePath $cutterFilePath";
     ExecScript($script);
     APPLOG($script);
 
@@ -163,7 +167,7 @@ function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePa
     APPLOG($script);
 
     $tmp2FilePath = NewTMPImagePath();
-    $script = "convert -transparent black -fuzz 10% $tmp1FilePath $tmp2FilePath";
+    $script = "convert -transparent black -fuzz 0% $tmp1FilePath $tmp2FilePath";
     ExecScript($script);
     APPLOG($script);
 
@@ -285,6 +289,14 @@ function APPLOG($text)
 //
 function GetImageRegions($imagePath)
 {
+    /*
+    global $CurrentRegions;
+
+    APPLOG("RegImageRegions $CurrentRegions");
+    $regionList = explode('.', $CurrentRegions);
+    return $regionList;
+     */
+
     global $CONVERSION_PATH;
 
     $matchName = explode('.', basename($imagePath))[0];
@@ -303,6 +315,16 @@ function GetImageRegions($imagePath)
 
 function DuplicateImageRegions($previousImagePath, $currentImagePath) 
 {
+    return '';
+    /*
+    global $CurrentRegions;
+
+    APPLOG("DuImageRegions $CurrentRegions");
+    $regionList = explode('.', $CurrentRegions);
+    return $regionList;
+     */
+
+    /*
     global $IMAGE_SUFFIX;
 
     APPLOG("Duplicate Regions:  $previousImagePath $currentImagePath");
@@ -324,14 +346,16 @@ function DuplicateImageRegions($previousImagePath, $currentImagePath)
     }
 
     return $newRegionList;
+     */
 }
 
 
 function DisplayRegionPicker($text, $name)
 {
+    global $CurrentRegions;
     global $CurrentImage;
 
-    $regionList = GetImageRegions($CurrentImage);
+    $regionList = explode(',', $CurrentRegions);
 
 	print  $text;
 	DisplaySep0();
@@ -412,7 +436,9 @@ global $LastOperation;
 		APPLOG("InformUILayer: Error Image = $outputFilePath");
 	}
 
-    $regions = Implode(',', $regionList);
+    //$regions = Implode(',', $regionList);
+    //CJM DEV
+    $regions = '';
 	APPLOG("$outputFilePath $stats $regions");
 	echo '<html><head><title>-</title></head><body>';
 	echo '<script language="JavaScript" type="text/javascript">'."\n";
@@ -517,6 +543,22 @@ function DetermineImageSize($imagePath,$w,$h)
         }
         break;
     }
+}
+
+function GetColorCount($imagePath)
+{
+    if (file_exists($imagePath) == FALSE)
+        return 0;
+
+    $script = "identify -format \"%k \" $imagePath";
+    $count = ExecScript($script);
+    $spc = substr_count($count,' ');
+    if ($spc >= 1)
+    {
+        $a = explode(' ',$count);
+        $count = $a[0];
+    }
+    return $count;
 }
 
 

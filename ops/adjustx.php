@@ -65,7 +65,6 @@ if ($Region != 'ALL') {
 
 APPLOG("FINAL $Arg $command $outputFilePath");
 
-$regionList = DuplicateImageRegions($originalFilePath, $outputFilePath);
-InformUILayer($LastOperation, $outputFilePath, $regionList);
+InformUILayer($LastOperation, $outputFilePath, '');
 
 ?>

@@ -14,9 +14,11 @@ var ListImageURLS = [];  // list of all images in current session
 var ListImageStats = []; // the parallel list of stats for the image list
 var ListImageRegions = []; // the parallel list of regions for the image list
 var CurrentPosition = 0; // position of the current image being worked on
+var CurrentRegions = ''; // the regions associated with current image
 
 var	BusyDisplayed = 0;
 var HelpPageDisplayed = false;
+var ViewROIS = true;
 
 
 // the dimensions of the currently displayed image
@@ -400,8 +402,9 @@ function addImage(imageURL,text,regions)
 
 	ListImageURLS.push(imageURL);
 	ListImageStats.push(text);
-	ListImageRegions.push(regions.split(','));
+	ListImageRegions.push(regions);
 	CurrentPosition = ListImageURLS.length - 1;
+    CurrentRegions = regions;
 	displayCurrentImage();
 
     if (ListImageURLS.length > 1) 
@@ -412,9 +415,8 @@ function addImage(imageURL,text,regions)
 
 }
 
-function displayRegions(regionList)
+function displayRegions(regions)
 {
-
     // determine how much image dimensions are altered in view (encoded in aspects)
     var viewedImage = document.getElementById('ID_MAIN_IMAGE');
     var aspectX = (viewedImage.clientWidth / CurrentImageWidth).toFixed(2);
@@ -425,9 +427,12 @@ function displayRegions(regionList)
     var ctx = canvas.getContext("2d");
     ctx.canvas.width  = viewedImage.clientWidth;
     ctx.canvas.height = viewedImage.clientHeight;
+    
+    // clear the view
     ctx.clearRect(0, 0, CurrentImageWidth, CurrentImageWidth);
 
     // for all regions (except the background), draw the region bounding box
+	var regionList = regions.split(',');
     for (i = 0; i < regionList.length; i++) {
 
         var region = regionList[i];
@@ -510,11 +515,11 @@ function completeWithNoAction()
 // Invoked once the image has been successfully loaded
 // This function is invoked via javascript injection at ./ops/loadx.php
 //
-function completeImageLoad(imageURL,text,regions,width,height)
+function completeImageLoad(imageURL, text, regions, width, height)
 {
     CurrentImageWidth = width;
     CurrentImageHeight = height;
-    console.log("completeImageLoad: ", imageURL, text);
+    console.log("completeImageLoad: ", imageURL, text, regions);
 	enableConvertButton();
 
 	if (BusyDisplayed == 0)
@@ -545,18 +550,17 @@ function completeImageLoad(imageURL,text,regions,width,height)
 // Invoked once a conversion has been executed on an image.
 // This function is invoked the PHP RecordAndComplete() in common.inc.
 //
-function completeImageOp(imageURL,text,regions)
+function completeImageOp(imageURL, text, regions)
 {
     console.log('completeImageOp', imageURL, text, regions);
 	enableConvertButton();
 
-
 	// if this is true, indicates the op was cancelled via 
 	// delete button prior to completion.
-	if (BusyDisplayed == 0)
-	{
-		return;
-	}
+	if (BusyDisplayed == 0) { return; }
+
+    // if no regions provided, then we'll use previous regions
+    if (regions.length < 1) { regions = ListImageRegions[CurrentPosition]; }
 
 	addImage(imageURL, text, regions);
 	hideBusyImage();
@@ -665,12 +669,15 @@ function displayOp(op)
 {
 	var imagePath = getCurrentImagePath();
 	var homeImageURL = ListImageURLS[0];
+	var regions = ListImageRegions[CurrentPosition];
+
     if (imagePath != null) 
     {
         console.log("POST: ", imagePath, op);
         $.post(op, 
             {
                 CURRENTIMAGE: imagePath, 
+                CURRENTREGIONS: regions, 
                 HOMEIMAGE: homeImageURL
             },
             function(data, status) 
@@ -747,8 +754,24 @@ function toggleHelpPage()
         show('ID_HELP_AREA');
         hide('ID_CONTENT_AREA');
     }
-
 }
+
+
+function toggleViewROIS()
+{
+
+    var viewDisplayRegions = document.getElementById('ID_VIEW_ROIS').checked;
+
+    if (viewDisplayRegions == true) {
+        show('ID_CANVAS');
+        console.log('show');
+    }
+    else {
+        hide('ID_CANVAS');
+        console.log('hide');
+    }
+}
+
 
 
     
