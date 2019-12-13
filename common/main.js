@@ -15,6 +15,7 @@ var ListImageStats = []; // the parallel list of stats for the image list
 var ListImageRegions = []; // the parallel list of regions for the image list
 var CurrentPosition = 0; // position of the current image being worked on
 var CurrentRegions = ''; // the regions associated with current image
+var CurrentOp = null; // the op we are currently viewing
 
 var	BusyDisplayed = 0;
 var HelpPageDisplayed = false;
@@ -24,6 +25,11 @@ var ViewROIS = true;
 // the dimensions of the currently displayed image
 var CurrentImageWidth = 1;
 var CurrentImageHeight = 1;
+
+// Global variables for the reporting canvas 
+var Canvas = null;
+var Ctx = null;
+var BusyPosition = 0;
 
 
 /************************************************************/
@@ -179,6 +185,8 @@ function viewCurrentImage()
 function returnToMainArea()
 {
     var e;
+
+    CurrentOp = null;
 
     hide('ID_RETURN_TO_MAINPAGE');
 	var scroll = 0;
@@ -413,10 +421,14 @@ function addImage(imageURL,text,regions)
         show('ID_NEXT_IMAGE');
     }
 
+    // update op view, if any.
+    if (CurrentOp != null) displayOp(CurrentOp);
+
 }
 
 function displayRegions(regions)
 {
+
     // determine how much image dimensions are altered in view (encoded in aspects)
     var viewedImage = document.getElementById('ID_MAIN_IMAGE');
     var aspectX = (viewedImage.clientWidth / CurrentImageWidth).toFixed(2);
@@ -430,6 +442,8 @@ function displayRegions(regions)
     
     // clear the view
     ctx.clearRect(0, 0, CurrentImageWidth, CurrentImageWidth);
+
+    if (regions == '') return;
 
     // for all regions (except the background), draw the region bounding box
 	var regionList = regions.split(',');
@@ -559,8 +573,17 @@ function completeImageOp(imageURL, text, regions)
 	// delete button prior to completion.
 	if (BusyDisplayed == 0) { return; }
 
-    // if no regions provided, then we'll use previous regions
-    if (regions.length < 1) { regions = ListImageRegions[CurrentPosition]; }
+    //
+    // if passed region is null, then we don't have any regions
+    // if passed region is empty string, then use parent regions
+    //
+    /*
+    if (regions == null) { 
+        regions = ListImageRegions[CurrentPosition]; 
+        console.log('SETTING PREVIOUS REGIONS: ', regions);
+    }
+    */
+    regions = ListImageRegions[CurrentPosition]; 
 
 	addImage(imageURL, text, regions);
 	hideBusyImage();
@@ -667,6 +690,9 @@ function getajaxRequest()
 
 function displayOp(op)
 {
+    CurrentOp = op; 
+    console.log('DisplayOp: ', CurrentOp);
+
 	var imagePath = getCurrentImagePath();
 	var homeImageURL = ListImageURLS[0];
 	var regions = ListImageRegions[CurrentPosition];
@@ -756,6 +782,58 @@ function toggleHelpPage()
     }
 }
 
+function init()
+{
+    console.log('init');
+    Canvas  = document.getElementById('ID_CANVAS');
+    Ctx = Canvas.getContext("2d");
+}
+
+var x = 120;
+var y = 120;
+var dx = 4;
+var dy = 4;
+var radius = 30;
+
+function test1()
+{
+    console.log('test');
+    BusyPosition = 0;
+    e  = document.getElementById('ID_INSIDE');
+    console.log(e.offsetWidth, e.offsetHeight);
+    Ctx.canvas.width = 600;
+    Ctx.canvas.height = 400;
+
+    x = e.offsetWidth / 2;
+    y = 140;
+    Ctx.canvas.width = e.offsetWidth;
+    Ctx.canvas.height = e.offsetHeight;
+    animate();
+
+    
+}
+
+function animate() 
+{
+    requestAnimationFrame(animate);
+
+    Ctx.clearRect(0, 0, 300, 300);
+
+    Ctx.fillStyle = "#ff0000";
+
+    Ctx.beginPath();
+    Ctx.arc(x,y,radius,0,Math.PI * 2, false);
+    /*
+    Ctx.strokeStyle = 'red';
+    Ctx.stroke();
+    */
+    Ctx.fill();
+
+    /*
+    x += dx;
+    y += dy;
+    */
+}
 
 function toggleViewROIS()
 {

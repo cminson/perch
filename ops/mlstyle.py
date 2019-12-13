@@ -23,6 +23,7 @@ PATH_OUTPUT = '/var/www/christopherminson/ic/conversions/'
 #
 def load_image(path_image):
 
+    print(path_image)
     image = tf.io.read_file(path_image)
     image = tf.image.decode_image(image, channels=3)
     image = tf.image.convert_image_dtype(image, tf.float32)
@@ -38,31 +39,31 @@ def load_image(path_image):
     return image
 
 
-os.environ["TFHUB_CACHE_DIR"] = '/var/www/christopherminson/ic/cache'
+os.environ["TFHUB_CACHE_DIR"] = '/var/www/perch/CACHE'
 
 
 if __name__ == '__main__':
 
     count = len(sys.argv)
-    if count != 3:
+    if count != 4:
         print('ERROR')
         exit()
 
-    name_original = sys.argv[1]
-    name_style = sys.argv[2]
+    path_original = sys.argv[1]
+    path_style = sys.argv[2]
+    path_result = sys.argv[3]
 
     hub_handle = 'https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/1'
     hub_module = hub.load(hub_handle)
 
-    image_original = load_image(name_original);
-    image_style = load_image(name_style);
+    image_original = load_image(path_original);
+    image_style = load_image(path_style);
 
     results = hub_module(tf.constant(image_original), tf.constant(image_style))
 
     image = tf.squeeze(results[0], axis=0)
 
-    output_name = str(randint(100000,999999)) + '.jpg'
-    matplotlib.image.imsave(PATH_OUTPUT + output_name, image)
+    matplotlib.image.imsave(path_result, image)
 
-    print(f'result: {PATH_OUTPUT + output_name}', end='')
+    print(path_result);
 

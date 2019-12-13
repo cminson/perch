@@ -71,7 +71,10 @@ $outputFileURL = GetConversionURL($outputFilePath);
 //
 // Exec AI segment analysis of uploaded file
 //
-$script = escapeshellcmd("python ./mlsegment.py $outputFilePath");
+// specify path to downgraded venv tensorflow (1.14)
+// how to do this as current mrcnn deosn't work in tf 2.0
+//
+$script = escapeshellcmd("/var/www/perch/VENV/bin/python3 ./mlsegment.py $outputFilePath");
 shell_exec($script);
 APPLOG("XLOAD SEGMENT ANALYSIS: $script");
 

@@ -28,7 +28,6 @@ if ($Region != 'ALL') {
     $LastOperation .=  " $Region";
 }
 
-$regionList = DuplicateImageRegions($inputFilePath, $outputFilePath);
-InformUILayer("TINT",$outputFilePath,$regionList);
+InformUILayer("TINT",$outputFilePath, null);
 
 ?>

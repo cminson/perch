@@ -27,18 +27,18 @@ include "/var/www/perch/common/common.inc";
 <style>
 
 .outsideWrapper{
-    width:512px;
-    height:auto;
-    border:5px solid black;}
+    width:500px;
+    height:300px;
+    border:0px solid black;}
 
 .insideWrapper{
-    width:100%;
-    height:auto;
+    width:auto;
+    height:100%;
     position:relative;}
 
 .coveredImage{
-    width:512px;
-    height: auto;
+    width:auto;
+    height: 300px;
     position:static; 
     display: inline-block; border: none; margin-top:0px; margin-bottom:0px; cursor: crosshair; }
 
@@ -51,21 +51,6 @@ include "/var/www/perch/common/common.inc";
 
 
 <script>
-    function init() {
-        console.log('init');
-
-        /*
-        var e = document.getElementById('ID_CANVAS');
-        var ctx = e.getContext("2d");
-        ctx.beginPath();
-        ctx.lineWidth = "2";
-        ctx.strokeStyle = "green";
-        ctx.rect(0, 0, 100, 100);
-        ctx.stroke();
-        */
-
-
-    }
 
 </script>
 
@@ -73,6 +58,8 @@ include "/var/www/perch/common/common.inc";
 
 <body onload="init()" style="text-align: center">
     <div id="home"></div>
+    <center>
+    </center>
 
 <div style="display: none" id="ID_HELP_AREA">
 
@@ -90,6 +77,8 @@ include "/var/www/perch/common/common.inc";
     <img onclick="homeImage()" id="ID_HOME_IMAGE" height="50" src="./resources/utils/trans.gif" alt="">
     <input onclick="toggleViewROIS()" type="checkbox" id="ID_VIEW_ROIS" name="scales" checked>
     View Boxes&nbsp;&nbsp;
+    <p>
+    <input onclick="test1()" type="button" id="ID_TEST" name="TEST">
     <div id="ID_OBJECT_VALUES"></div>
     <p>
     </div>
@@ -124,6 +113,9 @@ include "/var/www/perch/common/common.inc";
     <div ID="ID_INSIDE" class="insideWrapper">
         <img src="./resources/banners/banner01.jpg" class="coveredImage" id="ID_MAIN_IMAGE">
         <canvas id="ID_CANVAS" class="coveringCanvas"></canvas>
+        <!--
+        <canvas id="ID_CANVAS" width="600" height="400" class="coveringCanvas"></canvas>
+        -->
     </div>
     </div>
 

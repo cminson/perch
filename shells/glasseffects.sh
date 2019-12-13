@@ -155,7 +155,7 @@ ocolor="white"			# overlay color
 newseed=""				# seed value (set to -v)
 
 # set directory for temporary files
-dir="../TMP"    # suggestions are dir="." or dir="/tmp"
+dir="."    # suggestions are dir="." or dir="/tmp"
 
 # set up functions to report Usage and Usage with Description
 PROGNAME=`type $0 | awk '{print $3}'`  # search for executable on path

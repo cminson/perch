@@ -1,5 +1,4 @@
 <?php
-
 include '../common/common.inc';
 APPLOG('TINT');
 

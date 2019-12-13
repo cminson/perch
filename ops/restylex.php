@@ -1,23 +1,32 @@
 <?php
 include '../common/common.inc';
-
-if (CompleteWithNoAction()) return;
-
-$LastOperation = 'Color Effect: ';
-$inputFileDir = $_POST['CURRENTFILE'];
-$inputFileDir = "$BASE_DIR$inputFileDir";
+$LastOperaton = 'Restyled';
 
 
+$inputFilePath = GetCurrentImagePath();
+$outputFilePath = NewImagePath();
+$Region = $_POST['REGION'];
+
+
+/*
 $Arg = $_POST['ARG1'];
 $Setting = $_POST['SETTING'];
+ */
 
-$path_style = "$DIR_STYLES"."escher1.jpg";
+$path_style = "$PATH_STYLES"."escher1.jpg";
 
-$command = escapeshellcmd("./mlstyle.py $inputFileDir $path_style");
-$output = shell_exec($command);
-$outputFilePath = GetConversionPath($output);
-RecordCommand("pythonx.php $output $outputFilePath");
-RecordCommand("FINAL $outputFilePath");
+$script = escapeshellcmd("./mlstyle.py $inputFilePath $path_style $outputFilePath");
+ExecScript($script);
+APPLOG($script);
 
-RecordAndComplete('Style',$outputFilePath,TRUE);
+if ($Region != 'ALL') {
+
+    APPLOG("Applying Region Operation").
+    $maskFilePath = GetConversionPath($Region);
+    $outputFilePath = ApplyRegionOperation($inputFilePath, $outputFilePath, $maskFilePath);
+    $LastOperation .=  " $Region";
+}
+
+InformUILayer("RESTYLE",$outputFilePath, null);
+
 ?>

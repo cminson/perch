@@ -1,9 +1,15 @@
 <?php
 include '../common/common.inc';
+APPLOG('RESTYLE');
+
 
 DisplayTitle('Apply Color Effects');
 
 DisplayFormStart();
+
+DisplayRegionPicker('Target Region','REGION');
+DisplaySep1();
+
 
 $labels = array('Esher');
 $args = array('ESHER');

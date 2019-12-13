@@ -156,6 +156,33 @@ function CompleteWithNoAction()
 function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePath)
 {
 
+    $transColor = "'#fe00fe'";
+    $tmpFilePath = NewTMPImagePath();
+    $script = "convert -fill $transColor -opaque black -fuzz 1% $maskFilePath $tmpFilePath";
+    ExecScript($script);
+    APPLOG($script);
+
+    $cutterFilePath = NewImagePath();
+    $script = "convert -transparent white $tmpFilePath $cutterFilePath";
+    ExecScript($script);
+    APPLOG($script);
+
+    $tmp1FilePath = NewTMPImagePath();
+    $script = "composite -geometry +0+0 $cutterFilePath $convertedFilePath $tmp1FilePath";
+    ExecScript($script);
+    APPLOG($script);
+
+    $tmp2FilePath = NewTMPImagePath();
+    $script = "convert -transparent $transColor  $tmp1FilePath $tmp2FilePath";
+    ExecScript($script);
+    APPLOG($script);
+
+    $resultFilePath = NewImagePath();
+    $script = "composite -geometry +0+0 $tmp2FilePath $originalFilePath $resultFilePath";
+    ExecScript($script);
+    APPLOG($script);
+
+    /*
     $cutterFilePath = NewImagePath();
     $script = "convert -transparent white -fuzz 1% $maskFilePath $cutterFilePath";
     ExecScript($script);
@@ -175,6 +202,8 @@ function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePa
     $script = "composite -geometry +0+0 $tmp2FilePath $originalFilePath $resultFilePath";
     ExecScript($script);
     APPLOG($script);
+
+     */
 
     APPLOG("APPLY FINAL $resultFilePath");
     return $resultFilePath;
@@ -417,7 +446,7 @@ function ReportError($error)
 }
 
 
-function InformUILayer($op,$outputFilePath,$regionList)
+function InformUILayer($op,$outputFilePath,$regions)
 {
 global $LastOperation;
 
@@ -436,9 +465,6 @@ global $LastOperation;
 		APPLOG("InformUILayer: Error Image = $outputFilePath");
 	}
 
-    //$regions = Implode(',', $regionList);
-    //CJM DEV
-    $regions = '';
 	APPLOG("$outputFilePath $stats $regions");
 	echo '<html><head><title>-</title></head><body>';
 	echo '<script language="JavaScript" type="text/javascript">'."\n";

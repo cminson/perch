@@ -1,15 +1,22 @@
 <?php
-include '../common/common.inc';
+include '../zcommon/common.inc';
 
+RecordCommand('ENTER');
+$Title = $X_TRIM;
+$LastOperation = $X_TRIM;
 
-DisplayTitle('Trim Image');
+DisplayMainPageReturn();
+DisplayTitle($Title);
 DisplayFormStart();
-DisplayNumPicker("Pixels",'SETTING',1,100,10);
-DisplaySep1();
-$v= array('NORTH','SOUTH','NORTHSOUTH','WEST','EAST','WESTEAST','ALL');
-$s = array('Top','Bottom','Top & Bottom','Left','Right','Left & Right','All Sides');
-DisplayGenStringPicker('Side(s) to Trim','GRAVITY',$v,$s,0);
+$v = array();
+$s = array();
+for ($i=1; $i < 20; $i += 1)
+{
+    $s[] = "$i%";
+    $v[] = $i;
+
+}
+DisplayGenStringPicker('','PERCENT',$v,$s,9);
 DisplayConvertButton();
 DisplayFormEnd();
-
 ?>
