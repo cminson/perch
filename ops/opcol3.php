@@ -1,12 +1,11 @@
 <?php
 print "<table class=\"ops\">\n";
 #print "<caption class=\"ops\">Convert</caption>\n";
-DisplayOpButton("Tint","tint.php");
-DisplayOpButton("Color","color.php");
-DisplayOpButton("Filter","filter.php");
-DisplayOpButton("Effects","effects.php");
-DisplayOpButton("Anime","cartoon.php");
-DisplayOpButton("Restyle","restyle.php");
+DisplayOpButton('Color','color.php');
+DisplayOpButton("Sketch","sketch.php");
+DisplayOpButton('Style','style.php');
+DisplayOpButton('Anime','cartoon.php');
+DisplayOpButton('Surrender Control','restyle.php');
 print "</table>\n";
 ?>
 
