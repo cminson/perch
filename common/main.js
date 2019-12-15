@@ -5,31 +5,52 @@
  * Author: Christophewr Minson
  * https://www.christopherminson.com
  */
-const BASE_URL = "http://54.71.108.91";   // also set in common.inc
 
-const IMAGE_BUSY = BASE_URL + "/resources/utils/busy.gif";
-const CONVERSIONS_PATH = "/CONVERSIONS/";
 
+// 
+// URL and directory roots
+//
+const BASE_URL = "http://54.71.108.91";   // root. also set in common.inc
+const CONVERSIONS_PATH = "/CONVERSIONS/"; // where images are stored
+
+// 
+// Our current session state
+//
 var ListImageURLS = [];  // list of all images in current session
 var ListImageStats = []; // the parallel list of stats for the image list
 var ListImageRegions = []; // the parallel list of regions for the image list
 var CurrentPosition = 0; // position of the current image being worked on
 var CurrentRegions = ''; // the regions associated with current image
 var CurrentOp = null; // the op we are currently viewing
-
 var	BusyDisplayed = 0;
 var HelpPageDisplayed = false;
 var ViewROIS = true;
 
-
+//
 // the dimensions of the currently displayed image
+//
 var CurrentImageWidth = 1;
 var CurrentImageHeight = 1;
 
-// Global variables for the reporting canvas 
-var Canvas = null;
-var Ctx = null;
-var BusyPosition = 0;
+//
+// Constants and variables used by the Busy Indicstor
+//
+const BUSY_RADIAN_INCREMENT = 0.1;
+const BUSY_RADIAN_START = 1.5;
+const BUSY_COLOR_LOADIMAGE = '#ff0000';
+const BUSY_COLOR_ANALYZEIMAGE = '#00ff00';
+const BUSY_FPS = 15;
+const BUSY_STROKE_WIDTH = 9;
+var BusyRadius = 60;
+var BusyStartRadian = 0;
+var BusyEndRadian = 0;
+var BusyTimer = null;
+var BusyColor = BUSY_COLOR_LOADIMAGE;
+
+//
+// POST Endpoints
+//
+ENDPOINT_SEGMENT = './ops/segmentx.php';
 
 
 /************************************************************/
@@ -52,8 +73,6 @@ function submitFrameFile()
     e.submit();
 
     frame = "FRAME"+SelectedFrame;
-    e  = document.getElementById(frame);
-    e.src = IMAGE_BUSY;
 }
 
 function completeFrameLoad(imageList,text)
@@ -127,6 +146,8 @@ function chooseFile()
 function submitFile() 
 {
     document.getElementById('ID_LOAD_FORM').submit();
+
+    BusyColor = BUSY_COLOR_LOADIMAGE;
 	displayBusyImage();
 }
 
@@ -269,17 +290,6 @@ function displayCurrentImage()
 
 }
 
-function hideBusyImage()
-{
-	BusyDisplayed = 0;
-}
-
-function displayBusyImage()
-{
-    document.getElementById('ID_MAIN_IMAGE').src = IMAGE_BUSY;
-
-	BusyDisplayed = 1;
-}
 
 function getCurrentImageURL()
 {
@@ -406,7 +416,6 @@ function setCurrentStatus(image,text)
 //
 function addImage(imageURL,text,regions)
 {
-	hideBusyImage();
 
 	ListImageURLS.push(imageURL);
 	ListImageStats.push(text);
@@ -433,6 +442,7 @@ function displayRegions(regions)
     var viewedImage = document.getElementById('ID_MAIN_IMAGE');
     var aspectX = (viewedImage.clientWidth / CurrentImageWidth).toFixed(2);
     var aspectY = (viewedImage.clientHeight / CurrentImageHeight).toFixed(2);
+    console.log('ASPECTS XY', aspectX, aspectY);
 
     // ensure the overlay canvas size is exactly the same as the viewed image
     var canvas  = document.getElementById('ID_CANVAS');
@@ -472,6 +482,7 @@ function displayRegions(regions)
 
         var x = x * aspectX;
         var y = y * aspectY;
+        // tasmania aspectx:  0.73 0.58
         var width = w * aspectX;
         var height = h * aspectY;
 
@@ -540,7 +551,6 @@ function completeImageLoad(imageURL, text, regions, width, height)
 	{
 		return;
 	}
-	hideBusyImage();
 	//show('imagearea');
 	show('ID_MAIN_SLIDER');
 
@@ -552,17 +562,47 @@ function completeImageLoad(imageURL, text, regions, width, height)
 
 	addImage(imageURL,text,regions);
 
+    document.getElementById('ID_MAIN_IMAGE').style.opacity = "0.2";
     document.getElementById('ID_HOME_IMAGE').src = imageURL;
 
     hide('ID_PREVIOUS_IMAGE');
     hide('ID_NEXT_IMAGE');
 
-    //document.getElementById('ID_OBJECT_VALUES').innerHTML = segmentInfo;
+    // have the AI analyze the image for regions of interest (ROI)
+    executeImageAnalysis();
 }
 
 //
+// Invoked once the image has been ROI analyzed
+// Save off the regions and then display them. 
+// Terminate any busy indicators
+//
+function completeImageAnalysis(imagePath, regions)
+{
+    console.log('completeImageAnalysis', imagePath, regions);
+    ListImageRegions[CurrentPosition] = regions; 
+    displayRegions(ListImageRegions[CurrentPosition]);
+    hideBusyImage();
+	document.getElementById('ID_IMAGE_STATS').innerHTML = 'Image Ready';
+
+    var regionList = regions.split(',');
+    var regionNames = '';
+    for (i = 0; i < regionList.length; i++) {
+        var region = regionList[i];
+        console.log(region)
+        var name = region.split('.')[2];
+        regionNames += name;
+        regionNames += '  ';
+    }
+
+	document.getElementById('ID_IMAGE_STATS').innerHTML = regionNames;
+    document.getElementById('ID_MAIN_IMAGE').style.opacity = "1.0";
+}
+
+
+//
 // Invoked once a conversion has been executed on an image.
-// This function is invoked the PHP RecordAndComplete() in common.inc.
+// This function is invoked the PHP InformUI() in common.inc.
 //
 function completeImageOp(imageURL, text, regions)
 {
@@ -607,7 +647,7 @@ function backgroundSubmitOpForm()
     var imagePath = getCurrentImagePath();
 	document.getElementById('current').value = imagePath;
 
-    // execute the fom POSTR
+    // execute the POST
     document.getElementById('ID_OP_SUBMITFORM').submit();
 }
 
@@ -618,6 +658,7 @@ function backgroundSubmitOpForm()
 function submitOpForm()
 {
     console.log('submitOpForm');
+	document.getElementById('ID_IMAGE_STATS').innerHTML = 'Loading Image ...';
 
     // Don't want to block.  
     // Therefore run submission in background, not in main thread
@@ -686,6 +727,32 @@ function getajaxRequest()
     }
     return ajaxRequest;
 }
+
+
+//
+// Ask the AI to perform a ROI analysis of the current image
+// The AI will return a comman delimitted string of all the 
+// detected ROI masks.
+//
+function executeImageAnalysis()
+{
+	var imagePath = getCurrentImagePath();
+
+    BusyColor = BUSY_COLOR_ANALYZEIMAGE;
+	document.getElementById('ID_IMAGE_STATS').innerHTML = 'AI Analyzing Image ...';
+
+    var op = './ops/segmentx.php';
+    $.post(ENDPOINT_SEGMENT, 
+        {
+            CURRENTIMAGE: imagePath 
+        },
+        function(data, status) 
+        {
+            completeImageAnalysis(imagePath, data);
+        }
+    );
+}
+
 
 
 function displayOp(op)
@@ -785,58 +852,94 @@ function toggleHelpPage()
 function init()
 {
     console.log('init');
-    Canvas  = document.getElementById('ID_CANVAS');
-    Ctx = Canvas.getContext("2d");
+    //ctx.globalAlpha = 0.5;
 }
 
-var x = 120;
-var y = 120;
-var dx = 4;
-var dy = 4;
-var radius = 30;
+
 
 function test1()
 {
-    console.log('test');
-    BusyPosition = 0;
-    e  = document.getElementById('ID_INSIDE');
-    console.log(e.offsetWidth, e.offsetHeight);
-    Ctx.canvas.width = 600;
-    Ctx.canvas.height = 400;
-
-    x = e.offsetWidth / 2;
-    y = 140;
-    Ctx.canvas.width = e.offsetWidth;
-    Ctx.canvas.height = e.offsetHeight;
-    animate();
-
-    
+    console.log('test1');
+    displayBusyImage();
 }
 
-function animate() 
+function test2() 
 {
-    requestAnimationFrame(animate);
-
-    Ctx.clearRect(0, 0, 300, 300);
-
-    Ctx.fillStyle = "#ff0000";
-
-    Ctx.beginPath();
-    Ctx.arc(x,y,radius,0,Math.PI * 2, false);
-    /*
-    Ctx.strokeStyle = 'red';
-    Ctx.stroke();
-    */
-    Ctx.fill();
-
-    /*
-    x += dx;
-    y += dy;
-    */
+    console.log('test2');
+    hideBusyImage();
 }
+
+
+function displayBusyImage()
+{
+	BusyDisplayed = 1;
+
+    if (BusyTimer != null)
+    {
+        clearTimeout(BusyTimer)
+        BusyTimer = null;
+    }
+
+    BusyStartRadian = BUSY_RADIAN_START;
+    BusyEndRadian = BUSY_RADIAN_START + BUSY_RADIAN_INCREMENT;;
+    BusyEndRadian = Math.round(BusyEndRadian * 10 ) / 10;
+
+    animateBusyDisplay();
+}
+
+
+function hideBusyImage()
+{
+	BusyDisplayed = 0;
+    console.log('hideBusyImage');
+    if (BusyTimer != null) clearTimeout(BusyTimer)
+
+    BusyTimer = null;
+}
+
+
+function animateBusyDisplay()
+{
+    BusyTimer = setTimeout(function() {
+    requestAnimationFrame(animateBusyDisplay);
+
+    var ctx  = document.getElementById('ID_CANVAS').getContext('2d');
+    var image_div  = document.getElementById('ID_INSIDE'); 
+
+    ctx.canvas.width = image_div.offsetWidth;
+    ctx.canvas.height = image_div.offsetHeight;
+    var centerX = image_div.offsetWidth / 2;
+    var centerY = (ctx.canvas.height / 2);
+
+    ctx.strokeStyle = BusyColor;
+    ctx.fillStyle = BusyColor;
+
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    ctx.beginPath();
+    ctx.strokeWidth = BUSY_STROKE_WIDTH;
+    ctx.lineWidth = BUSY_STROKE_WIDTH;
+    ctx.arc(centerX , centerY, BusyRadius, 0,(Math.PI * 2), false);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, BusyRadius, 
+        Math.PI * BusyStartRadian, Math.PI * BusyEndRadian, false);
+    ctx.lineTo(centerX, centerY);
+    ctx.fill();
+
+    BusyStartRadian = BusyEndRadian;
+    BusyEndRadian += BUSY_RADIAN_INCREMENT;
+    if (BusyEndRadian > 2.0) BusyEndRadian = BUSY_RADIAN_INCREMENT;
+    BusyEndRadian = Math.round(BusyEndRadian * 10 ) / 10;
+
+    }, 1000 / BUSY_FPS);
+}
+
 
 function toggleViewROIS()
 {
+    console.log('toggleViewROS');
 
     var viewDisplayRegions = document.getElementById('ID_VIEW_ROIS').checked;
 
