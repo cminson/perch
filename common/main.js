@@ -22,7 +22,12 @@ var ListImageRegions = []; // the parallel list of regions for the image list
 var CurrentPosition = 0; // position of the current image being worked on
 var CurrentRegions = ''; // the regions associated with current image
 var CurrentOp = null; // the op we are currently viewing
+
 var	BusyDisplayed = 0;
+var BusyIcon = null;
+const PATH_BUSY_ICON = './resources/utils/busy2.gif';
+
+
 var HelpPageDisplayed = false;
 var ViewROIS = true;
 
@@ -165,7 +170,6 @@ function updateview(img, selection)
     $('#Y2').val(selection.y2);
     $('#w').val(selection.width);
     $('#h').val(selection.height);
-
 }
 
 function viewOpList(id)
@@ -271,6 +275,7 @@ var e;
 
 function displayCurrentImage()
 {
+    console.log('displayCurrentImage');
 	var imageURL = ListImageURLS[CurrentPosition];
 	var stats = ListImageStats[CurrentPosition];
 
@@ -283,7 +288,33 @@ function displayCurrentImage()
 		setHiddenImage(document.getElementById('ID_MAIN_IMAGE'));
     };
     */
-	document.getElementById('ID_MAIN_IMAGE').src = imageURL;
+	//document.getElementById('ID_MAIN_IMAGE').src = imageURL;
+
+    var img = new Image();
+    img.src = imageURL;
+
+    img.onload = function(){
+
+        console.log('onload');
+
+        var canvas  = document.getElementById('ID_CANVAS');
+        var ctx = canvas.getContext("2d");
+
+        var aspectRatioY = canvas.height / img.height;
+        canvas.width = img.width * aspectRatioY;
+
+        ctx.drawImage(img, 0, 0, img.width, img.height,
+                   0, 0, canvas.width, canvas.height);
+        console.log(canvas.width, canvas.height);
+
+        /*
+        ctx.lineWidth = "2";
+        ctx.strokeStyle = "red";
+        ctx.strokeRect(0, 0, 100, 100);
+        */
+
+    }
+
 	document.getElementById('ID_IMAGE_STATS').innerHTML = stats;
 	setDownloadImageLink(imageURL);
     displayRegions(ListImageRegions[CurrentPosition]);
@@ -416,7 +447,7 @@ function setCurrentStatus(image,text)
 //
 function addImage(imageURL,text,regions)
 {
-
+    console.log('addImage');
 	ListImageURLS.push(imageURL);
 	ListImageStats.push(text);
 	ListImageRegions.push(regions);
@@ -438,28 +469,30 @@ function addImage(imageURL,text,regions)
 function displayRegions(regions)
 {
 
-    // determine how much image dimensions are altered in view (encoded in aspects)
-    var viewedImage = document.getElementById('ID_MAIN_IMAGE');
-    var aspectX = (viewedImage.clientWidth / CurrentImageWidth).toFixed(2);
-    var aspectY = (viewedImage.clientHeight / CurrentImageHeight).toFixed(2);
-    console.log('ASPECTS XY', aspectX, aspectY);
-
-    // ensure the overlay canvas size is exactly the same as the viewed image
+    console.log('DISPLAY REGIONS');
     var canvas  = document.getElementById('ID_CANVAS');
     var ctx = canvas.getContext("2d");
-    ctx.canvas.width  = viewedImage.clientWidth;
-    ctx.canvas.height = viewedImage.clientHeight;
+
+    // determine how much image dimensions are altered in view (encoded in aspects)
+    var aspectX = (canvas.width / CurrentImageWidth).toFixed(2);
+    var aspectY = (canvas.height / CurrentImageHeight).toFixed(2);
+    console.log('CANVAS w h', canvas.width, canvas.height);
+    console.log('CURRENTIMAGE w h', CurrentImageWidth, CurrentImageHeight);
+    console.log('ASPECTS X Y', aspectX, aspectY);
+
     
     // clear the view
-    ctx.clearRect(0, 0, CurrentImageWidth, CurrentImageWidth);
+    //ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (regions == '') return;
+    if (regions.length < 10) return;
 
     // for all regions (except the background), draw the region bounding box
 	var regionList = regions.split(',');
     for (i = 0; i < regionList.length; i++) {
 
         var region = regionList[i];
+
         console.log('Region: ', region);
         if (region.includes('background')) continue;
 
@@ -486,8 +519,10 @@ function displayRegions(regions)
         var width = w * aspectX;
         var height = h * aspectY;
 
-        console.log(x, y, width, height);
+        console.log('x y w h ', x, y, width, height);
         ctx.rect(x, y, width, height);
+
+        //ctx.rect(0 + offsetX, 0, 100, 100);
         ctx.stroke();
     }
 }
@@ -547,10 +582,6 @@ function completeImageLoad(imageURL, text, regions, width, height)
     console.log("completeImageLoad: ", imageURL, text, regions);
 	enableConvertButton();
 
-	if (BusyDisplayed == 0)
-	{
-		return;
-	}
 	//show('imagearea');
 	show('ID_MAIN_SLIDER');
 
@@ -560,10 +591,10 @@ function completeImageLoad(imageURL, text, regions, width, height)
     CurrentPosition = 0;
     NextPosition = 0;
 
+    console.log('calling addImage');
 	addImage(imageURL,text,regions);
 
-    document.getElementById('ID_MAIN_IMAGE').style.opacity = "0.2";
-    document.getElementById('ID_HOME_IMAGE').src = imageURL;
+    //document.getElementById('ID_HOME_IMAGE').src = imageURL;
 
     hide('ID_PREVIOUS_IMAGE');
     hide('ID_NEXT_IMAGE');
@@ -590,13 +621,14 @@ function completeImageAnalysis(imagePath, regions)
     for (i = 0; i < regionList.length; i++) {
         var region = regionList[i];
         console.log(region)
+        if (region.includes('background')) continue;
+
         var name = region.split('.')[2];
         regionNames += name;
         regionNames += '  ';
     }
 
 	document.getElementById('ID_IMAGE_STATS').innerHTML = regionNames;
-    document.getElementById('ID_MAIN_IMAGE').style.opacity = "1.0";
 }
 
 
@@ -856,11 +888,44 @@ function init()
 }
 
 
-
+//
+// chris-post 466x622
+// 
+//
 function test1()
 {
     console.log('test1');
-    displayBusyImage();
+
+    console.log('DISPLAY REGIONS');
+    // determine how much image dimensions are altered in view (encoded in aspects)
+    var viewedImage = document.getElementById('ID_MAIN_IMAGE');
+    console.log('Parent:', viewedImage.parentNode.id);
+
+    var aspectX = (viewedImage.clientWidth / CurrentImageWidth).toFixed(4);
+    var aspectY = (viewedImage.clientHeight / CurrentImageHeight).toFixed(4);
+    var offsetX = viewedImage.offsetLeft;
+    console.log('ID_MAIN_IMAGE offsetX w h: ', offsetX, viewedImage.clientWidth, viewedImage.clientHeight);
+    console.log('CURRENTIMAGE w h', CurrentImageWidth, CurrentImageHeight);
+    console.log('ASPECTS X Y', aspectX, aspectY);
+
+    // ensure the overlay canvas size is exactly the same as the viewed image
+    var canvas  = document.getElementById('ID_CANVAS');
+    var ctx = canvas.getContext("2d");
+    ctx.canvas.width  = viewedImage.clientWidth;
+    ctx.canvas.height = viewedImage.clientHeight;
+    
+    // clear the view
+    ctx.clearRect(0, 0, CurrentImageWidth, CurrentImageWidth);
+
+    // 466 width
+    ctx.lineWidth = "2";
+    ctx.strokeStyle = "red";
+    ctx.strokeRect(offsetX, 0, 466 * aspectX, 100);
+
+    ctx.beginPath();
+    ctx.strokeStyle = "blue";
+    ctx.strokeRect(offsetX * aspectX, 100, 100, 100);
+
 }
 
 function test2() 
@@ -869,7 +934,44 @@ function test2()
     hideBusyImage();
 }
 
+function displayBusyImage()
+{
+    if (BusyIcon != null) return;
 
+    var statArea = document.getElementById('ID_STAT_AREA');
+    var canvas = document.getElementById('ID_CANVAS');
+    var ctx = canvas.getContext("2d");
+
+    var width = document.body.clientWidth;
+    var height = ctx.canvas.height;
+
+    y = 180;
+    x = (width / 2) - 30;
+    console.log(x,y);
+
+    BusyIcon = new Image();
+    BusyIcon.src = PATH_BUSY_ICON;
+    BusyIcon.style.position = "absolute";
+    BusyIcon.style.left = x + "px"
+    BusyIcon.style.top = y  + "px"
+    BusyIcon.style.width = "60px";
+    BusyIcon.style.height = "60px";
+    BusyIcon.id = 0;
+
+    document.body.appendChild(BusyIcon);
+}
+
+function hideBusyImage()
+{
+    if (BusyIcon != null)
+    {
+        document.body.removeChild(BusyIcon);
+    }
+    BusyIcon = null;
+}
+
+
+/*
 function displayBusyImage()
 {
 	BusyDisplayed = 1;
@@ -900,15 +1002,13 @@ function hideBusyImage()
 
 function animateBusyDisplay()
 {
+    if (BusyTimer == 0) return;
     BusyTimer = setTimeout(function() {
     requestAnimationFrame(animateBusyDisplay);
 
     var ctx  = document.getElementById('ID_CANVAS').getContext('2d');
-    var image_div  = document.getElementById('ID_INSIDE'); 
 
-    ctx.canvas.width = image_div.offsetWidth;
-    ctx.canvas.height = image_div.offsetHeight;
-    var centerX = image_div.offsetWidth / 2;
+    var centerX = (ctx.canvas.width / 2);
     var centerY = (ctx.canvas.height / 2);
 
     ctx.strokeStyle = BusyColor;
@@ -935,6 +1035,7 @@ function animateBusyDisplay()
 
     }, 1000 / BUSY_FPS);
 }
+*/
 
 
 function toggleViewROIS()
