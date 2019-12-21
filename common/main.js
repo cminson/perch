@@ -33,6 +33,7 @@ var ViewROIS = true;
 //
 // the dimensions of the currently displayed image
 //
+var DisplayedImage = null; // DEV
 var CurrentImageWidth = 1;
 var CurrentImageHeight = 1;
 
@@ -42,23 +43,39 @@ var CurrentImageHeight = 1;
 ENDPOINT_SEGMENT = './ops/segmentx.php';
 
 
+//
+// Constants and variables used by the Busy Indicstor
+//
+const BUSY_RADIAN_INCREMENT = 0.1;
+const BUSY_RADIAN_START = 1.5;
+const BUSY_COLOR_LOADIMAGE = '#ff0000';
+const BUSY_COLOR_ANALYZEIMAGE = '#00ff00';
+const BUSY_FPS = 15;
+const BUSY_STROKE_WIDTH = 9;
+var BusyRadius = 60;
+var BusyStartRadian = 0;
+var BusyEndRadian = 0;
+var BusyTimer = null;
+var BusyColor = BUSY_COLOR_LOADIMAGE;
+
+
 /************************************************************/
 
 
 function init()
 {
-    var img = new Image();
-    img.src = PATH_BANNER_ICON;
+    DisplayedImage = new Image();
+    DisplayedImage.src = PATH_BANNER_ICON;
 
-    img.onload = function(){
+    DisplayedImage.onload = function(){
 
         var canvas  = document.getElementById('ID_CANVAS');
         var ctx = canvas.getContext("2d");
 
-        var aspectRatioY = canvas.height / img.height;
-        canvas.width = img.width * aspectRatioY;
+        var aspectRatioY = canvas.height / DisplayedImage.height;
+        canvas.width = DisplayedImage.width * aspectRatioY;
 
-        ctx.drawImage(img, 0, 0, img.width, img.height,
+        ctx.drawImage(DisplayedImage, 0, 0, DisplayedImage.width, DisplayedImage.height,
                    0, 0, canvas.width, canvas.height);
     }
 }
@@ -250,7 +267,7 @@ function completeImageAnalysis(imagePath, regions)
 {
     console.log('completeImageAnalysis', imagePath, regions);
     ListImageRegions[CurrentPosition] = regions; 
-    displayRegions(ListImageRegions[CurrentPosition]);
+    displayRegions();
     busyStateDeactivate();
 	document.getElementById('ID_IMAGE_STATS').innerHTML = 'Image Ready';
 
@@ -322,8 +339,11 @@ function executeImageAnalysis()
 //
 // Render all the region rects associated with the current image
 //
-function displayRegions(regions)
+function displayRegions()
 {
+    if (ViewROIS == false) return;
+    
+    regions = ListImageRegions[CurrentPosition];
 
     console.log('displayRegions: ', regions);
     var canvas  = document.getElementById('ID_CANVAS');
@@ -435,21 +455,14 @@ function displayCurrentImage()
 
 	stats = "[" + (CurrentPosition+1) + "/" + ListImageStats.length + "] " + stats;
 
-    var img = new Image();
-    img.src = imageURL;
+    DisplayedImage = new Image();
+    DisplayedImage.src = imageURL;
 
-    img.onload = function(){
+    DisplayedImage.onload = function(){
 
-        var canvas  = document.getElementById('ID_CANVAS');
-        var ctx = canvas.getContext("2d");
-
-        var aspectRatioY = canvas.height / img.height;
-        canvas.width = img.width * aspectRatioY;
-
-        ctx.drawImage(img, 0, 0, img.width, img.height,
-                   0, 0, canvas.width, canvas.height);
-        //console.log(canvas.width, canvas.height);
-        displayRegions(ListImageRegions[CurrentPosition]);
+        console.log(DisplayedImage);
+        renderCurrentImage();
+        displayRegions();
     }
 
 	document.getElementById('ID_IMAGE_STATS').innerHTML = stats;
@@ -457,6 +470,28 @@ function displayCurrentImage()
 
 }
 
+
+function renderCurrentImage()
+{
+        var canvas  = document.getElementById('ID_CANVAS');
+        var ctx = canvas.getContext("2d");
+
+        if (DisplayedImage == null) 
+        {
+
+        }
+
+        var aspectRatioY = canvas.height / DisplayedImage.height;
+        canvas.width = DisplayedImage.width * aspectRatioY;
+
+        ctx.drawImage(DisplayedImage, 
+            0, 0, 
+            DisplayedImage.width, 
+            DisplayedImage.height,
+            0, 0, 
+            canvas.width, canvas.height);
+
+}
 
 function getCurrentImageURL()
 {
@@ -536,7 +571,7 @@ function disableConvertButton()
 }
 
 
-function busyStateActivate()
+function xbusyStateActivate()
 {
     if (BusyIcon != null) return;
 
@@ -564,7 +599,7 @@ function busyStateActivate()
 }
 
 
-function busyStateDeactivate()
+function xbusyStateDeactivate()
 {
     if (BusyIcon != null)
     {
@@ -578,16 +613,10 @@ function toggleViewROIS()
 {
     console.log('toggleViewROS');
 
-    var viewDisplayRegions = document.getElementById('ID_VIEW_ROIS').checked;
+    ViewROIS = !ViewROIS;
 
-    if (viewDisplayRegions == true) {
-        show('ID_CANVAS');
-        console.log('show');
-    }
-    else {
-        hide('ID_CANVAS');
-        console.log('hide');
-    }
+    renderCurrentImage();
+    displayRegions();
 }
 
 function toggleHelpPage()
@@ -672,13 +701,72 @@ var e;
 
 function regionTest()
 {
-var canvas  = document.getElementById('ID_CANVAS');
-var ctx = canvas.getContext("2d");
-ctx.lineWidth = "4";
-ctx.strokeStyle = "blue";
-ctx.strokeRect(0, 0, 100, 100);
+    var canvas  = document.getElementById('ID_CANVAS');
+    var ctx = canvas.getContext("2d");
+    ctx.lineWidth = "4";
+    ctx.strokeStyle = "blue";
+    ctx.strokeRect(0, 0, 100, 100);
 }
 
 
-    
+function busyStateActivate()
+{
+    if (BusyTimer != null)
+    {
+        clearTimeout(BusyTimer)
+        BusyTimer = null;
+    }
 
+    BusyStartRadian = BUSY_RADIAN_START;
+    BusyEndRadian = BUSY_RADIAN_START + BUSY_RADIAN_INCREMENT;;
+    BusyEndRadian = Math.round(BusyEndRadian * 10 ) / 10;
+
+    animateBusyDisplay();
+}
+
+
+function busyStateDeactivate()
+{
+    console.log('hideBusyImage');
+    if (BusyTimer != null) clearTimeout(BusyTimer)
+    BusyTimer = null;
+
+    renderCurrentImage();
+    displayRegions(ListImageRegions[CurrentPosition]);
+}
+
+
+function animateBusyDisplay()
+{
+    BusyTimer = setTimeout(function() {
+    requestAnimationFrame(animateBusyDisplay);
+
+    var ctx  = document.getElementById('ID_CANVAS').getContext('2d');
+
+    var centerX = (ctx.canvas.width / 2);
+    var centerY = (ctx.canvas.height / 2);
+
+    ctx.strokeStyle = BusyColor;
+    ctx.fillStyle = BusyColor;
+
+    renderCurrentImage();
+
+    ctx.beginPath();
+    ctx.strokeWidth = BUSY_STROKE_WIDTH;
+    ctx.lineWidth = BUSY_STROKE_WIDTH;
+    ctx.arc(centerX , centerY, BusyRadius, 0,(Math.PI * 2), false);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, BusyRadius,
+        Math.PI * BusyStartRadian, Math.PI * BusyEndRadian, false);
+    ctx.lineTo(centerX, centerY);
+    ctx.fill();
+
+    BusyStartRadian = BusyEndRadian;
+    BusyEndRadian += BUSY_RADIAN_INCREMENT;
+    if (BusyEndRadian > 2.0) BusyEndRadian = BUSY_RADIAN_INCREMENT;
+    BusyEndRadian = Math.round(BusyEndRadian * 10 ) / 10;
+
+    }, 1000 / BUSY_FPS);
+}
