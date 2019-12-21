@@ -25,6 +25,8 @@ var CurrentOp = null; // the op we are currently viewing
 var BusyIcon = null;    // set to PATH_BUSY_ICON when system is busy
 const PATH_BUSY_ICON = './resources/utils/busy2.gif'; 
 
+const PATH_BANNER_ICON = './resources/banners/banner01.jpg';
+
 var HelpPageDisplayed = false;
 var ViewROIS = true;
 
@@ -43,6 +45,23 @@ ENDPOINT_SEGMENT = './ops/segmentx.php';
 /************************************************************/
 
 
+function init()
+{
+    var img = new Image();
+    img.src = PATH_BANNER_ICON;
+
+    img.onload = function(){
+
+        var canvas  = document.getElementById('ID_CANVAS');
+        var ctx = canvas.getContext("2d");
+
+        var aspectRatioY = canvas.height / img.height;
+        canvas.width = img.width * aspectRatioY;
+
+        ctx.drawImage(img, 0, 0, img.width, img.height,
+                   0, 0, canvas.width, canvas.height);
+    }
+}
 
 //
 // Executed by the Load Image button.
