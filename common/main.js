@@ -55,8 +55,8 @@ const BUSY_STROKE_WIDTH = 9;
 var BusyRadius = 60;
 var BusyStartRadian = 0;
 var BusyEndRadian = 0;
-var BusyTimer = null;
 var BusyColor = BUSY_COLOR_LOADIMAGE;
+var BusyStateActive = false;
 
 
 /************************************************************/
@@ -241,13 +241,20 @@ function completeImageLoad(imageURL, text, regions, width, height)
 	//show('imagearea');
 	show('ID_MAIN_SLIDER');
 
-    ListImageURLS = [];
-    ListImageStats = [];
-    ListImageRegions = [];
-    CurrentPosition = 0;
-    NextPosition = 0;
+    ListImageURLS = [imageURL];
+    ListImageStats = [text];
+    ListImageRegions = [regions];
 
-	addImage(imageURL,text,regions);
+	CurrentPosition = ListImageURLS.length - 1;
+    CurrentRegions = regions;
+	displayCurrentImage();
+    if (CurrentOp != null) displayOp(CurrentOp);
+
+    if (ListImageURLS.length > 1) 
+    {
+        show('ID_PREVIOUS_IMAGE');
+        show('ID_NEXT_IMAGE');
+    }
 
     document.getElementById('ID_HOME_IMAGE').src = imageURL;
 
@@ -307,7 +314,19 @@ function completeImageOp(imageURL, text, regions)
     */
     regions = ListImageRegions[CurrentPosition]; 
 
-	addImage(imageURL, text, regions);
+	ListImageURLS.push(imageURL);
+	ListImageStats.push(text);
+	ListImageRegions.push(regions);
+	CurrentPosition = ListImageURLS.length - 1;
+    CurrentRegions = regions;
+	displayCurrentImage();
+
+    if (ListImageURLS.length > 1) 
+    {
+        show('ID_PREVIOUS_IMAGE');
+        show('ID_NEXT_IMAGE');
+    }
+
 	busyStateDeactivate();
 }
 
@@ -424,7 +443,6 @@ function viewCurrentImage()
 //
 function addImage(imageURL,text,regions)
 {
-    console.log('addImage');
 	ListImageURLS.push(imageURL);
 	ListImageStats.push(text);
 	ListImageRegions.push(regions);
@@ -611,8 +629,6 @@ function xbusyStateDeactivate()
 
 function toggleViewROIS()
 {
-    console.log('toggleViewROS');
-
     ViewROIS = !ViewROIS;
 
     renderCurrentImage();
@@ -711,16 +727,11 @@ function regionTest()
 
 function busyStateActivate()
 {
-    if (BusyTimer != null)
-    {
-        clearTimeout(BusyTimer)
-        BusyTimer = null;
-    }
-
     BusyStartRadian = BUSY_RADIAN_START;
     BusyEndRadian = BUSY_RADIAN_START + BUSY_RADIAN_INCREMENT;;
     BusyEndRadian = Math.round(BusyEndRadian * 10 ) / 10;
 
+    BusyStateActive = true;
     animateBusyDisplay();
 }
 
@@ -728,15 +739,52 @@ function busyStateActivate()
 function busyStateDeactivate()
 {
     console.log('hideBusyImage');
-    if (BusyTimer != null) clearTimeout(BusyTimer)
-    BusyTimer = null;
 
-    renderCurrentImage();
-    displayRegions(ListImageRegions[CurrentPosition]);
+    BusyStateActive = false;
+
+    setTimeout(function () {
+
+        renderCurrentImage();
+        displayRegions();
+    }, 300);
 }
 
-
 function animateBusyDisplay()
+{
+    if (BusyStateActive == false) return;
+
+    requestAnimationFrame(animateBusyDisplay);
+
+    var ctx  = document.getElementById('ID_CANVAS').getContext('2d');
+
+    var centerX = (ctx.canvas.width / 2);
+    var centerY = (ctx.canvas.height / 2);
+
+    ctx.strokeStyle = BusyColor;
+    ctx.fillStyle = BusyColor;
+
+    renderCurrentImage();
+
+    ctx.beginPath();
+    ctx.strokeWidth = BUSY_STROKE_WIDTH;
+    ctx.lineWidth = BUSY_STROKE_WIDTH;
+    ctx.arc(centerX , centerY, BusyRadius, 0,(Math.PI * 2), false);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, BusyRadius,
+        Math.PI * BusyStartRadian, Math.PI * BusyEndRadian, false);
+    ctx.lineTo(centerX, centerY);
+    ctx.fill();
+
+    BusyStartRadian = BusyEndRadian;
+    BusyEndRadian += BUSY_RADIAN_INCREMENT;
+    if (BusyEndRadian > 2.0) BusyEndRadian = BUSY_RADIAN_INCREMENT;
+    BusyEndRadian = Math.round(BusyEndRadian * 10 ) / 10;
+
+}
+
+function xanimateBusyDisplay()
 {
     BusyTimer = setTimeout(function() {
     requestAnimationFrame(animateBusyDisplay);
