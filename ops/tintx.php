@@ -28,6 +28,6 @@ if ($Region != 'ALL') {
     $LastOperation .=  " $Region";
 }
 
-InformUILayer("TINT",$outputFilePath, null);
+InformUILayer("TINT",$outputFilePath,$REGIONS_PREVIOUS);
 
 ?>

@@ -57,7 +57,6 @@ if ($Region != 'ALL')
 }
 
 
-$regionList = DuplicateImageRegions($originalFilePath, $outputFilePath);
-InformUILayer('LABEL',$outputFilePath,$regionList);
+InformUILayer('LABEL',$outputFilePath,$REGIONS_PREVIOUS);
 
 ?>

@@ -86,8 +86,7 @@ if ($Region != 'ALL')
     $LastOperation .=  " $Region";
 }
 
-$regionList = DuplicateImageRegions($originalFilePath, $outputFilePath);
-InformUILayer('WARP',$outputFilePath,$regionList);
+InformUILayer('WARP',$outputFilePath,$REGIONS_PREVIOUS);
 
 
 

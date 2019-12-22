@@ -8,7 +8,7 @@ $outputFilePath = NewImagePath();
 $Region = $_POST['REGION'];
 if ($Region == 'ALL') {
     $outputFilePath = GetConversionPath($inputFilePath);
-    InformUILayer('EXTRACT', $outputFilePath, '');
+    InformUILayer('EXTRACT', $outputFilePath, $REGIONS_NONE);
     APPLOG('EXTRACT',$outputFilePath,FALSE);
     exit();
 }
@@ -33,7 +33,7 @@ if (stripos($Region, 'background') != FALSE)
     ExecScript($script);
     APPLOG($script);
 
-    InformUILayer('EXTRACT', $outputFilePath, '');
+    InformUILayer('EXTRACT', $outputFilePath, $REGIONS_NONE);
     exit();
 
 }
@@ -74,5 +74,5 @@ $script = "convert -crop $cropDim $inputFilePath $outputFilePath";
 ExecScript($script);
 
 
-InformUILayer('EXTRACT', $outputFilePath, null);
+InformUILayer('EXTRACT', $outputFilePath, $REGIONS_NONE);
 ?>

@@ -27,6 +27,6 @@ if ($Region != 'ALL') {
     $LastOperation .=  " $Region";
 }
 
-InformUILayer("RESTYLE",$outputFilePath, null);
+InformUILayer("RESTYLE",$outputFilePath,$REGIONS_PREVIOUS);
 
 ?>

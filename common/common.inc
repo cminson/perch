@@ -42,6 +42,16 @@ $IMAGE_MAX_NUMBER = 9999999;
 $ExtractedRegionOriginX = 0;
 $ExtractedRegionOriginY = 0;
 
+$REGIONS_PREVIOUS = 'PREVIOUS';
+$REGIONS_NONE = 'NONE';
+
+
+//
+//
+// ***************************************************************
+//
+//
+
 $CurrentImage = $CurrentRegions = $HomeImage = '';
 
 if ((isset($_POST['CURRENTIMAGE'])) == TRUE)
@@ -342,43 +352,6 @@ function GetImageRegions($imagePath)
 }
 
 
-function DuplicateImageRegions($previousImagePath, $currentImagePath) 
-{
-    return '';
-    /*
-    global $CurrentRegions;
-
-    APPLOG("DuImageRegions $CurrentRegions");
-    $regionList = explode('.', $CurrentRegions);
-    return $regionList;
-     */
-
-    /*
-    global $IMAGE_SUFFIX;
-
-    APPLOG("Duplicate Regions:  $previousImagePath $currentImagePath");
-
-    $newRegionList = array();
-    $currentImageName = basename($currentImagePath, $IMAGE_SUFFIX);
-    $previousImageName = basename($previousImagePath, $IMAGE_SUFFIX);
-    $regionList = GetImageRegions($previousImagePath);
-
-    foreach ($regionList as $region)
-    {
-        $oldRegionPath = GetConversionPath($region);
-        $newRegionName = str_replace($previousImageName, $currentImageName, $region);
-        $newRegionPath = GetConversionPath($newRegionName);
-
-        ExecScript("cp $oldRegionPath $newRegionPath");
-
-        array_push($newRegionList, basename($newRegionPath));
-    }
-
-    return $newRegionList;
-     */
-}
-
-
 function DisplayRegionPicker($text, $name)
 {
     global $CurrentRegions;
@@ -395,7 +368,15 @@ function DisplayRegionPicker($text, $name)
     {
         $terms = explode('.', $regionFile);
         $regionName = $terms[2];
-	    print  "<option value=\"$regionFile\">$regionName\n";
+        $regionDimensions = explode('_', $terms[3]);
+        $x = $regionDimensions[0];
+        $y = $regionDimensions[1];
+        $width = $regionDimensions[2];
+        $height = $regionDimensions[3];
+
+        $regionAttribute = $regionName.'  '.$x .' '.$y.'   '.$width.'x'.$height;
+
+	    print  "<option value=\"$regionFile\">$regionAttribute\n";
     }
 	print  "</select>\n";
 }
@@ -464,6 +445,8 @@ global $LastOperation;
 		$stats = "Error";
 		APPLOG("InformUILayer: Error Image = $outputFilePath");
 	}
+
+    if ($regions == null) $regions = '0';
 
 	APPLOG("$outputFilePath $stats $regions");
 	echo '<html><head><title>-</title></head><body>';

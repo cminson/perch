@@ -65,6 +65,6 @@ if ($Region != 'ALL') {
 
 APPLOG("FINAL $Arg $command $outputFilePath");
 
-InformUILayer($LastOperation, $outputFilePath, '');
+InformUILayer($LastOperation, $outputFilePath, $REGIONS_PREVIOUS);
 
 ?>

@@ -170,7 +170,6 @@ if ($ARG_REGION != 'ALL') {
 //$outputFilePath = CheckFileSize($outputFilePath);
 APPLOG("FINAL $outputFilePath");
 
-$regionList = DuplicateImageRegions($inputFilePath, $outputFilePath);
-InformUILayer("TINT",$outputFilePath,$regionList);
+InformUILayer("TINT",$outputFilePath,$REGIONS_PREVIOUS);
 
 ?>

@@ -138,6 +138,6 @@ if ($Region != 'ALL') {
     $LastOperation .=  " $Region";
 }
 
-InformUILayer("ENHANCE",$outputFilePath,'');
+InformUILayer("ENHANCE",$outputFilePath,$REGIONS_PREVIOUS);
 
 ?>

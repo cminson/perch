@@ -50,7 +50,8 @@ const BUSY_RADIAN_INCREMENT = 0.1;
 const BUSY_RADIAN_START = 1.5;
 const BUSY_COLOR_LOADIMAGE = '#ff0000';
 const BUSY_COLOR_ANALYZEIMAGE = '#00ff00';
-const BUSY_FPS = 15;
+const BUSY_SYSTEM_FPS = 60;   // hardset:  this is a built-in js system value
+const BUSY_FPS = 15;        // our desired fps
 const BUSY_STROKE_WIDTH = 9;
 var BusyRadius = 60;
 var BusyStartRadian = 0;
@@ -120,6 +121,29 @@ function submitOpForm()
     // Therefore run submission in background, not in main thread
     setTimeout(backgroundSubmitOpForm, 500);
 }
+
+
+//
+// Execute the operation submission
+// This is called in the background via a timer from submitOpForm()
+// 
+function backgroundSubmitOpForm()
+{
+
+    // disable convertButton. display busy image 
+	disableConvertButton();
+	busyStateActivate();
+
+    // set current variable to the current image
+    // this is the image we will operate on
+    // this gets sent to php during the submit
+    var imagePath = getCurrentImagePath();
+	document.getElementById('current').value = imagePath;
+
+    // execute the POST
+    document.getElementById('ID_OP_SUBMITFORM').submit();
+}
+
 
 
 // 
@@ -193,28 +217,6 @@ function displayOp(op)
 
 
 //
-// Execute the operation submission
-// This is called in the background via a timer from submitOpForm()
-// 
-function backgroundSubmitOpForm()
-{
-
-    // disable convertButton. display busy image 
-	disableConvertButton();
-	busyStateActivate();
-
-    // set current variable to the current image
-    // this is the image we will operate on
-    // this gets sent to php during the submit
-    var imagePath = getCurrentImagePath();
-	document.getElementById('current').value = imagePath;
-
-    // execute the POST
-    document.getElementById('ID_OP_SUBMITFORM').submit();
-}
-
-
-//
 // Invoked when an operation terminates with no change to image
 //
 function completeWithNoAction()
@@ -279,40 +281,49 @@ function completeImageAnalysis(imagePath, regions)
 	document.getElementById('ID_IMAGE_STATS').innerHTML = 'Image Ready';
 
     var regionList = regions.split(',');
-    var regionNames = '';
+    var regionAttributes = '';
     for (i = 0; i < regionList.length; i++) {
         var region = regionList[i];
         if (region.includes('background')) continue;
 
         var name = region.split('.')[2];
-        regionNames += name;
-        regionNames += '  ';
+        var regionDimensions = region.split('.')[3].split('_');
+        var regionWidth = regionDimensions[2];
+        var regionHeight = regionDimensions[3];
+
+        var attribute = name + '_' + regionWidth + 'x' + regionHeight;
+        regionAttributes += attribute;
+        regionAttributes += ' ';
     }
 
-	document.getElementById('ID_IMAGE_STATS').innerHTML = regionNames;
+	document.getElementById('ID_IMAGE_STATS').innerHTML = regionAttributes;
 }
 
+//
+// cross-defined in common.inc
+//
+const REGIONS_PREVIOUS = 'PREVIOUS';
+const REGIONS_NONE = 'NONE';
 
 //
 // Invoked once a conversion has been executed on an image.
-// This function is invoked the PHP InformUI() in common.inc.
+// This function is executed by InformUI() in common.inc.
+//
+// Re-enable convert button
+// Determine what regions are associated with this converted image
+//      1) if region == EGthen we use the previous image's regions (default)
+//      2) if region == '0', then we will have no regions for this image
+//      3) otherwise, use the string in regions as our new region set
+// Store off all conversion data (imageURL, status text, regions)
+// Disable busy state
 //
 function completeImageOp(imageURL, text, regions)
 {
     console.log('completeImageOp', imageURL, text, regions);
 	enableConvertButton();
 
-    //
-    // if passed region is null, then we don't have any regions
-    // if passed region is empty string, then use parent regions
-    //
-    /*
-    if (regions == null) { 
-        regions = ListImageRegions[CurrentPosition]; 
-        console.log('SETTING PREVIOUS REGIONS: ', regions);
-    }
-    */
-    regions = ListImageRegions[CurrentPosition]; 
+    if (regions == REGIONS_PREVIOUS) regions = ListImageRegions[CurrentPosition]; 
+    else if (regions == REGIONS_NONE) regions = '';
 
 	ListImageURLS.push(imageURL);
 	ListImageStats.push(text);
@@ -361,7 +372,8 @@ function executeImageAnalysis()
 function displayRegions()
 {
     if (ViewROIS == false) return;
-    
+    if (ListImageRegions[CurrentPosition] == null) return;
+
     regions = ListImageRegions[CurrentPosition];
 
     console.log('displayRegions: ', regions);
@@ -435,30 +447,6 @@ function viewCurrentImage()
 	    document.getElementById('viewimage').href = BASE_URL+"/displayimage.html?CURRENTIMAGE="+imagePath;
         //console.log(BASE_URL+"/displayimage.html?CURRENTIMAGE="+imagePath);
     }
-}
-
-
-// 
-// Add image to the end of the array of possible images 
-//
-function addImage(imageURL,text,regions)
-{
-	ListImageURLS.push(imageURL);
-	ListImageStats.push(text);
-	ListImageRegions.push(regions);
-	CurrentPosition = ListImageURLS.length - 1;
-    CurrentRegions = regions;
-	displayCurrentImage();
-
-    if (ListImageURLS.length > 1) 
-    {
-        show('ID_PREVIOUS_IMAGE');
-        show('ID_NEXT_IMAGE');
-    }
-
-    // update op view, if any.
-    //if (CurrentOp != null) displayOp(CurrentOp);
-
 }
 
 
@@ -589,44 +577,6 @@ function disableConvertButton()
 }
 
 
-function xbusyStateActivate()
-{
-    if (BusyIcon != null) return;
-
-    var statArea = document.getElementById('ID_STAT_AREA');
-    var canvas = document.getElementById('ID_CANVAS');
-    var ctx = canvas.getContext("2d");
-
-    var width = document.body.clientWidth;
-    var height = ctx.canvas.height;
-
-    y = 180;
-    x = (width / 2) - 30;
-    //console.log(x,y);
-
-    BusyIcon = new Image();
-    BusyIcon.src = PATH_BUSY_ICON;
-    BusyIcon.style.position = "absolute";
-    BusyIcon.style.left = x + "px"
-    BusyIcon.style.top = y  + "px"
-    BusyIcon.style.width = "60px";
-    BusyIcon.style.height = "60px";
-    BusyIcon.id = 0;
-
-    document.body.appendChild(BusyIcon);
-}
-
-
-function xbusyStateDeactivate()
-{
-    if (BusyIcon != null)
-    {
-        document.body.removeChild(BusyIcon);
-    }
-    BusyIcon = null;
-}
-
-
 function toggleViewROIS()
 {
     ViewROIS = !ViewROIS;
@@ -634,6 +584,7 @@ function toggleViewROIS()
     renderCurrentImage();
     displayRegions();
 }
+
 
 function toggleHelpPage()
 {
@@ -650,6 +601,7 @@ function toggleHelpPage()
         hide('ID_CONTENT_AREA');
     }
 }
+
 
 function selectArg(argValue) 
 {
@@ -671,28 +623,6 @@ function show(id)
     document.getElementById(id).style.display = 'block';
 }
 
-function getajaxRequest()
-{
-    var ajaxRequest;
-
-    try{
-        // Opera 8.0+, Firefox, Safari
-        ajaxRequest = new XMLHttpRequest();
-    } catch (e){
-        // Internet Explorer Browsers
-        try{
-            ajaxRequest = new ActiveXObject("Msxml2.XMLHTTP");
-        } catch (e) {
-            try{
-                ajaxRequest = new ActiveXObject("Microsoft.XMLHTTP");
-            } catch (e){
-                // Something went wrong
-                return false;
-            }
-        }
-    }
-    return ajaxRequest;
-}
 
 function reportOpError(error)
 {
@@ -725,6 +655,7 @@ function regionTest()
 }
 
 
+var BusyStateCounter = 0;
 function busyStateActivate()
 {
     BusyStartRadian = BUSY_RADIAN_START;
@@ -732,6 +663,7 @@ function busyStateActivate()
     BusyEndRadian = Math.round(BusyEndRadian * 10 ) / 10;
 
     BusyStateActive = true;
+    BusyStateCounter = 0;
     animateBusyDisplay();
 }
 
@@ -753,7 +685,12 @@ function animateBusyDisplay()
 {
     if (BusyStateActive == false) return;
 
+    BusyStateCounter += 1;
+
     requestAnimationFrame(animateBusyDisplay);
+
+    // run animation at BUSY_FPS rate
+    if ((BusyStateCounter % (BUSY_SYSTEM_FPS / BUSY_FPS)) != 0) return;
 
     var ctx  = document.getElementById('ID_CANVAS').getContext('2d');
 
@@ -782,39 +719,6 @@ function animateBusyDisplay()
     if (BusyEndRadian > 2.0) BusyEndRadian = BUSY_RADIAN_INCREMENT;
     BusyEndRadian = Math.round(BusyEndRadian * 10 ) / 10;
 
+
 }
 
-function xanimateBusyDisplay()
-{
-    BusyTimer = setTimeout(function() {
-    requestAnimationFrame(animateBusyDisplay);
-
-    var ctx  = document.getElementById('ID_CANVAS').getContext('2d');
-
-    var centerX = (ctx.canvas.width / 2);
-    var centerY = (ctx.canvas.height / 2);
-
-    ctx.strokeStyle = BusyColor;
-    ctx.fillStyle = BusyColor;
-
-    renderCurrentImage();
-
-    ctx.beginPath();
-    ctx.strokeWidth = BUSY_STROKE_WIDTH;
-    ctx.lineWidth = BUSY_STROKE_WIDTH;
-    ctx.arc(centerX , centerY, BusyRadius, 0,(Math.PI * 2), false);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, BusyRadius,
-        Math.PI * BusyStartRadian, Math.PI * BusyEndRadian, false);
-    ctx.lineTo(centerX, centerY);
-    ctx.fill();
-
-    BusyStartRadian = BusyEndRadian;
-    BusyEndRadian += BUSY_RADIAN_INCREMENT;
-    if (BusyEndRadian > 2.0) BusyEndRadian = BUSY_RADIAN_INCREMENT;
-    BusyEndRadian = Math.round(BusyEndRadian * 10 ) / 10;
-
-    }, 1000 / BUSY_FPS);
-}
