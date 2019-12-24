@@ -405,7 +405,7 @@ function DisplayRegionPicker($text, $name)
         }
         else 
         {
-            $code = chr($regionCount+65);
+            $code = chr($regionCount+65).')';
             $regionCount += 1;
         }
 
