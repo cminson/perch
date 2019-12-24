@@ -252,7 +252,6 @@ function completeImageLoad(imageURL, text, width, height)
     console.log("completeImageLoad: ", imageURL, text);
 	enableConvertButton();
 
-	//show('imagearea');
 	show('ID_MAIN_SLIDER');
 
     ListImageURLS = [imageURL];
@@ -291,14 +290,15 @@ function completeImageAnalysis(imagePath, regions)
     ListImageRegions[CurrentPosition] = regions; 
     displayRegions();
     busyStateDeactivate();
-	document.getElementById('ID_IMAGE_STATS').innerHTML = 'Image Ready';
 
     var regionList = regions.split(',');
     var regionAttributes = '';
+    var regionCount = 0;
     for (i = 0; i < regionList.length; i++) {
         var region = regionList[i];
         if (region.includes('background')) continue;
 
+        /*
         var name = region.split('.')[2];
         var regionDimensions = region.split('.')[3].split('_');
         var regionWidth = regionDimensions[2];
@@ -307,10 +307,20 @@ function completeImageAnalysis(imagePath, regions)
         var attribute = name + '_' + regionWidth + 'x' + regionHeight;
         regionAttributes += attribute;
         regionAttributes += ' ';
+        */
+        regionCount += 1;
     }
+
+    if (regionCount == 0)
+        regionAttributes = 'Image Loaded and Analyzed: No Regions Detected';
+    else if (regionCount == 1)
+        regionAttributes = 'Image Loaded and Analyzed: 1 Region Detected';
+    else
+        regionAttributes = 'Image Loaded and Analyzed: '+regionCount+' Regions Detected';
 
 	document.getElementById('ID_IMAGE_STATS').innerHTML = regionAttributes;
     if (CurrentOp != null) displayOp(CurrentOp);
+	show('ID_VIEW_IMAGE');
 }
 
 //
@@ -365,7 +375,7 @@ function executeImageAnalysis()
 {
 	var imagePath = getCurrentImagePath();
 
-	document.getElementById('ID_IMAGE_STATS').innerHTML = 'AI Analyzing Image ...';
+	document.getElementById('ID_IMAGE_STATS').innerHTML = 'DreamPerch Analyzing Image ...';
 
     var op = './ops/segmentx.php';
     $.post(ENDPOINT_SEGMENT, 
@@ -473,7 +483,7 @@ function viewCurrentImage()
 	var imagePath = getCurrentImagePath();
     if (imagePath != null) 
     {
-	    document.getElementById('viewimage').href = BASE_URL+"/displayimage.html?CURRENTIMAGE="+imagePath;
+	    document.getElementById('ID_VIEW_IMAGE').href = BASE_URL+"/displayimage.html?CURRENTIMAGE="+imagePath;
         //console.log(BASE_URL+"/displayimage.html?CURRENTIMAGE="+imagePath);
     }
 }

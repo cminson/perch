@@ -168,6 +168,8 @@ function CompleteWithNoAction()
 
 function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePath)
 {
+    global $LastOperation;
+    global $Region;
 
     $transColor = "'#fe00fe'";
     $tmpFilePath = NewTMPImagePath();
@@ -219,6 +221,9 @@ function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePa
      */
 
     APPLOG("APPLY FINAL $resultFilePath");
+    $regionName = explode('.', $Region)[2];
+    $LastOperation .=  "  $regionName";
+
     return $resultFilePath;
 }
 
@@ -443,12 +448,17 @@ function GetStatString($outputFilePath)
 
 	GetImageAttributes($outputFilePath,$width,$height,$size);
 
+    /*
     $psize = round(($size / 1000),0);
     $psize = $psize."kb";
     $pdim = "$width"."x"."$height";
     $stats = "$X_SIZE: $psize $pdim &nbsp;&nbsp;[$LastOperation]";
 
 	$stats = "$stats";
+     */
+
+    // DEV
+    $stats = $LastOperation;
 	return ($stats);
 }
 
@@ -475,6 +485,7 @@ global $LastOperation;
 
     if (file_exists($outputFilePath) == TRUE)
 	{
+        // DEV
 		$stats = GetStatString($outputFilePath);
 	}
 	else

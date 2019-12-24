@@ -1,19 +1,21 @@
 <?php
 include '../common/common.inc';
 
-$LastOperation = 'Enhance: ';
 
 $Arg = $_POST['ARG1'];
 $Setting = $_POST['SETTING'];
 $Region = $_POST['REGION'];
 
+$LastOperation = "Enhance";
 $inputFilePath = GetCurrentImagePath();
 
 $outputFilePath = NewImagePath();
+$desc = 'None';
 switch ($Arg)
 {
 case 'TOON1':
     $script = "../shells/toon.sh -m 1 $inputFilePath $outputFilePath";
+    $desc = 'Cartoon Toon1';
     break;
 case 'TOON2':
     $script = "../shells/toonify.sh -b 4 -t 10 -e DoG -q 0 $inputFilePath $outputFilePath";
@@ -35,6 +37,7 @@ case 'ZERO':
     break;
 case 'OUTLINE':
     $script = "convert $inputFilePath -colorspace gray \( +clone -blur 0x2 \) +swap -compose divide -composite -linear-stretch 5%x0% $outputFilePath";
+    $desc = 'Outlined';
     break;
 
 case 'BEAUTY':
@@ -42,6 +45,7 @@ case 'BEAUTY':
     break;
 case 'BLUR':
     $script = "convert -modulate 100,130 -paint $Setting  $inputFilePath $outputFilePath";
+    $desc = 'Blurred';
     break;
 case 'ENRICH':
     $script = "../shells/enrich.sh";
@@ -68,9 +72,11 @@ case "SOFTLIGHT":
 
 case 'ABSTRACT':
     $script = "convert -modulate 100,130 -paint 9  $inputFilePath $outputFilePath";
+    $desc = 'Abstracted';
     break;
 case 'PAINT':
     $script = "convert -paint 2  $inputFilePath $outputFilePath";
+    $desc = 'Painted';
     break;
 case 'COLORIZE':
     $script = "convert -colorize 270  $inputFilePath $outputFilePath";
@@ -126,6 +132,7 @@ case 'FLIPHORI':
 default:
     break;
 }
+$LastOperation = "$LastOperation $desc: ";
 
 ExecScript($script);
 APPLOG($script);
@@ -135,7 +142,6 @@ if ($Region != 'ALL') {
     APPLOG("Applying Region Operation").
     $maskFilePath = GetConversionPath($Region);
     $outputFilePath = ApplyRegionOperation($inputFilePath, $outputFilePath, $maskFilePath);
-    $LastOperation .=  " $Region";
 }
 
 InformUILayer("ENHANCE",$outputFilePath,$REGIONS_PREVIOUS);

@@ -10,6 +10,23 @@ BODY
     font-family:  Helvetica, Tahoma, Verdana, Arial;
 }
 
+a.viewImage {
+    display: none;
+    font-size: 15px; 
+    color: black;
+    font-weight: bold; 
+}
+
+span.stats {
+    vertical-align:middle; 
+    text-align: center; 
+    white-space: nowrap; 
+    color: black; 
+    font-weight: normal; 
+    font-size: 15px;
+}
+
+
 div.oparea {
     height:700px; 
     width: 900px; 
