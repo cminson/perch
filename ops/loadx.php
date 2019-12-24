@@ -86,14 +86,13 @@ $regions = Implode(',', $regionList);
 APPLOG("XLOAD REGIONS: $regions");
  */
 
-$regions = "";
 
 // inform javascript caller that the image is loaded and ready for display
 $LastOperation = "Image Loaded";
 APPLOG("LOADX SUCCESS $outputFilePath");
 echo '<html><head><title>-</title></head><body>';
 echo '<script language="JavaScript" type="text/javascript">'."\n";
-echo "parent.completeImageLoad(\"$outputFileURL\",\"$stats\",\"$regions\",\"$width\", \"$height\");";
+echo "parent.completeImageLoad(\"$outputFileURL\",\"$stats\",\"$width\", \"$height\");";
 echo "\n".'</script></body></html>';
 
 

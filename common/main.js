@@ -20,6 +20,7 @@ var ListImageStats = []; // the parallel list of stats for the image list
 var ListImageRegions = []; // the parallel list of regions for the image list
 var CurrentPosition = 0; // position of the current image being worked on
 var CurrentRegions = ''; // the regions associated with current image
+var SelectedRegion = 'ALL'; // the regions currently selected
 var CurrentOp = null; // the op we are currently viewing
 
 var BusyIcon = null;    // set to PATH_BUSY_ICON when system is busy
@@ -59,6 +60,15 @@ var BusyEndRadian = 0;
 var BusyColor = BUSY_COLOR_LOADIMAGE;
 var BusyStateActive = false;
 
+
+//
+// Region constants
+//
+const REGIONS_PEOPLE = ['person'];
+const REGIONS_LIVING = ['dog', 'cat', 'bird', 'potted plant', 'elephant', 'horse', 'sheep', 'cow', 'bear', 'zebra', 'giraffe'];
+const REGION_PEOPLE_COLOR = '#ff0000';
+const REGION_LIVING_COLOR = '#00ff00';
+const REGION_WORLD_COLOR = '#0000ff';
 
 /************************************************************/
 
@@ -195,10 +205,12 @@ function displayOp(op)
     if (imagePath != null) 
     {
         console.log("POST: ", imagePath, op);
+        console.log("POST SELECTED REGION: ", SelectedRegion);
         $.post(op, 
             {
                 CURRENTIMAGE: imagePath, 
                 CURRENTREGIONS: regions, 
+                SELECTEDREGION: SelectedRegion,
                 HOMEIMAGE: homeImageURL
             },
             function(data, status) 
@@ -233,11 +245,11 @@ function completeWithNoAction()
 // Invoked once the image has been successfully loaded
 // This function is invoked via javascript injection at ./ops/loadx.php
 //
-function completeImageLoad(imageURL, text, regions, width, height)
+function completeImageLoad(imageURL, text, width, height)
 {
     CurrentImageWidth = width;
     CurrentImageHeight = height;
-    console.log("completeImageLoad: ", imageURL, text, regions);
+    console.log("completeImageLoad: ", imageURL, text);
 	enableConvertButton();
 
 	//show('imagearea');
@@ -245,12 +257,11 @@ function completeImageLoad(imageURL, text, regions, width, height)
 
     ListImageURLS = [imageURL];
     ListImageStats = [text];
-    ListImageRegions = [regions];
+    ListImageRegions = [null];
+    CurrentRegions = null;
 
 	CurrentPosition = ListImageURLS.length - 1;
-    CurrentRegions = regions;
 	displayCurrentImage();
-    if (CurrentOp != null) displayOp(CurrentOp);
 
     if (ListImageURLS.length > 1) 
     {
@@ -275,6 +286,8 @@ function completeImageLoad(imageURL, text, regions, width, height)
 function completeImageAnalysis(imagePath, regions)
 {
     console.log('completeImageAnalysis', imagePath, regions);
+
+    CurrentRegions = regions;
     ListImageRegions[CurrentPosition] = regions; 
     displayRegions();
     busyStateDeactivate();
@@ -297,6 +310,7 @@ function completeImageAnalysis(imagePath, regions)
     }
 
 	document.getElementById('ID_IMAGE_STATS').innerHTML = regionAttributes;
+    if (CurrentOp != null) displayOp(CurrentOp);
 }
 
 //
@@ -358,9 +372,9 @@ function executeImageAnalysis()
         {
             CURRENTIMAGE: imagePath 
         },
-        function(data, status) 
+        function(regions, status) 
         {
-            completeImageAnalysis(imagePath, data);
+            completeImageAnalysis(imagePath, regions);
         }
     );
 }
@@ -398,6 +412,7 @@ function displayRegions()
 
     // for all regions (except the background), draw the region bounding box
 	var regionList = regions.split(',');
+    var regionCount = 0;
     for (i = 0; i < regionList.length; i++) {
 
         var region = regionList[i];
@@ -410,6 +425,7 @@ function displayRegions()
         // therefore we want the 3rd part of this string (box)
         // if this form changes then this code must change!
         //
+        var name = region.split('.')[2];
         var boundingBox = region.split('.')[3];
         var terms = boundingBox.split('_');
         var x = parseInt(terms[0]);
@@ -419,17 +435,30 @@ function displayRegions()
         //console.log(x, y, w, h, aspectX, aspectY);
 
 
-        var x = x * aspectX;
-        var y = y * aspectY;
-        // tasmania aspectx:  0.73 0.58
-        var width = w * aspectX;
-        var height = h * aspectY;
+        var x = Math.floor(x * aspectX);
+        var y = Math.floor(y * aspectY);
+        var width = Math.floor(w * aspectX);
+        var height = Math.floor(h * aspectY);
 
+        // colors are set based on category of region
+        var color;
+        if (REGIONS_PEOPLE.includes(name))
+            color = REGION_PEOPLE_COLOR;
+        else if (REGIONS_LIVING.includes(name))
+            color = REGION_LIVING_COLOR;
+        else
+            color = REGION_WORLD_COLOR;
+
+        var codeCharacter = String.fromCharCode(65 + regionCount);
 
         ctx.lineWidth = "2";
-        ctx.strokeStyle = "red";
+        ctx.strokeStyle = color;
         ctx.strokeRect(x, y, width, height);
-        console.log('Drawing region: x y w h ', x, y, width, height);
+
+        ctx.font = 'normal 20px Arial';
+        ctx.strokeText(codeCharacter, x, y);
+        console.log('Drawing region: code x y w h ', codeCharacter, x, y, width, height);
+        regionCount += 1;
     }
 }
 
@@ -718,7 +747,13 @@ function animateBusyDisplay()
     BusyEndRadian += BUSY_RADIAN_INCREMENT;
     if (BusyEndRadian > 2.0) BusyEndRadian = BUSY_RADIAN_INCREMENT;
     BusyEndRadian = Math.round(BusyEndRadian * 10 ) / 10;
-
-
 }
 
+
+function saveRegionSelection()
+{
+    var e = document.getElementById('ID_SELECT_REGION');
+    SelectedRegion = e.options[e.selectedIndex].value;
+    console.log('getRegionSelection', SelectedRegion);
+
+}

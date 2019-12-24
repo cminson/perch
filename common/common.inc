@@ -53,14 +53,17 @@ $REGIONS_NONE = 'NONE';
 //
 
 $CurrentImage = $CurrentRegions = $HomeImage = '';
+$SelectedRegion = 'ALL';
 
-if ((isset($_POST['CURRENTIMAGE'])) == TRUE)
-{
+if ((isset($_POST['CURRENTIMAGE'])) == TRUE) 
     $CurrentImage = $_POST['CURRENTIMAGE'];
-    $CurrentRegions = $_POST['CURRENTREGIONS'];
+if ((isset($_POST['CURRENTREGIONS'])) == TRUE) 
+    $CurrentRegions = trim($_POST['CURRENTREGIONS']);
+if ((isset($_POST['SELECTEDREGION'])) == TRUE) 
+    $SelectedRegion = trim($_POST['SELECTEDREGION']);
+if ((isset($_POST['HOMEIMAGE'])) == TRUE) 
     $HomeImage = $_POST['HOMEIMAGE'];
-    APPLOG("Home: $HomeImage Current: $CurrentImage");
-}
+APPLOG("POST:  CurrentRegions: $CurrentRegions SelectedRegion: $SelectedRegion");
 
 $IMAGE_SUFFIX = '.png';
 $GIF_SUFFIX = '.gif';
@@ -326,29 +329,43 @@ function APPLOG($text)
 //
 // retrieve all region mask files associated with given file
 //
+//
+//
+function compare_area($a, $b)
+{
+    return strnatcmp($a['area'], $b['area']);
+}
+
 function GetImageRegions($imagePath)
 {
-    /*
-    global $CurrentRegions;
-
-    APPLOG("RegImageRegions $CurrentRegions");
-    $regionList = explode('.', $CurrentRegions);
-    return $regionList;
-     */
-
     global $CONVERSION_PATH;
 
     $matchName = explode('.', basename($imagePath))[0];
-
-    $regionList = array();
     $regionPathList = glob($CONVERSION_PATH.'m'.$matchName.'*');
     $count = count($regionPathList);
     APPLOG("GetImageRegions: $matchName  Count: $count");
+
+    $regionList = array();
     foreach ($regionPathList as $regionPath)
     {
-        array_push($regionList, basename($regionPath));
+        $region = basename($regionPath);
+        $dim = explode('.', $region)[3];
+        $width = explode('_', $dim)[2];
+        $height = explode('_', $dim)[3];
+        $area = $width * $height;
+        APPLOG("DIM $region $area");
+
+        $regionArea = array('region' => $region, 'area' => $area);
+        array_push($regionList, $regionArea);
     }
-    return $regionList;
+
+    usort($regionList, 'compare_area');
+    $rankedRegionList = array();
+    foreach ($regionList as $region)
+    {
+        array_push($rankedRegionList, $region['region']);
+    }
+    return array_reverse($rankedRegionList);
 }
 
 
@@ -356,16 +373,24 @@ function DisplayRegionPicker($text, $name)
 {
     global $CurrentRegions;
     global $CurrentImage;
+    global $SelectedRegion;
 
     $regionList = explode(',', $CurrentRegions);
+    APPLOG("DisplayRegionPicker SelectedRegion:  $SelectedRegion");
 
 	print  $text;
 	DisplaySep0();
-	print  "<select name=\"$name\">\n";
-	print  "<option value=\"ALL\" selected>Entire Image\n";
+	print  "<select onchange=\"saveRegionSelection()\" id=\"ID_SELECT_REGION\" name=\"$name\">\n";
 
+    if ($SelectedRegion == "ALL")
+	    print  "<option value=\"ALL\" selected>Entire Image\n";
+    else
+	    print  "<option value=\"ALL\">Entire Image\n";
+
+    $regionCount = 0;
     foreach ($regionList as $regionFile)
     {
+        APPLOG('DisplayRegionPicker Region Value: ', $regionFile);
         $terms = explode('.', $regionFile);
         $regionName = $terms[2];
         $regionDimensions = explode('_', $terms[3]);
@@ -374,9 +399,22 @@ function DisplayRegionPicker($text, $name)
         $width = $regionDimensions[2];
         $height = $regionDimensions[3];
 
-        $regionAttribute = $regionName.'  '.$x .' '.$y.'   '.$width.'x'.$height;
+        if (strpos($regionFile, 'background') == true) 
+        {
+            $code = ' ';
+        }
+        else 
+        {
+            $code = chr($regionCount+65);
+            $regionCount += 1;
+        }
 
-	    print  "<option value=\"$regionFile\">$regionAttribute\n";
+        $regionAttribute = $code.'  '.$regionName.'  '.$width.'x'.$height;
+
+        if ($SelectedRegion == $regionFile)
+	        print  "<option value=\"$regionFile\" selected>$regionAttribute\n";
+        else
+	        print  "<option value=\"$regionFile\">$regionAttribute\n";
     }
 	print  "</select>\n";
 }
@@ -1091,7 +1129,42 @@ function DisplaySelectionPicker($labels, $args)
 
     }
 	print "</table class>\n";
+
 }
+
+
+
+function NewDisplayRegionPicker($regions, $args)
+{
+	print "<table class=\"argTable\">\n";
+    for ($i = 0; $i < count($regions); $i += 4)
+    {
+        print("<tr>\n");
+        for ($j = 0; $j < 4; $j ++)
+        {
+            print("<td>\n");
+            if (($i + $j) < count($regions))
+            {
+                $region = $regions[$i + $j];
+                //$arg = $args[$i + $j];
+                DisplayCheckBox($region, '', false);
+            }
+            else
+            {
+                print "&nbsp";
+            }
+            print("</td>\n");
+        }
+        print("</tr>\n");
+
+    }
+	print "</table class>\n";
+
+}
+
+
+
+
 
 
 function TestDisplaySelectionPicker($labels, $args)
