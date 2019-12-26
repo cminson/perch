@@ -70,25 +70,48 @@ const REGION_PEOPLE_COLOR = '#ff0000';
 const REGION_LIVING_COLOR = '#00ff00';
 const REGION_WORLD_COLOR = '#0000ff';
 
+//const COLOR_BACKGROUND = '#013220';
+const COLOR_BACKGROUND = '#d3d3d3';
+const BANNER_ANNOUNCE = 'Dream Perch';
+const BANNER_HELP1 = 'load an image  - click the upload arrow below';
+
 /************************************************************/
 
 
 function init()
 {
-    DisplayedImage = new Image();
-    DisplayedImage.src = PATH_BANNER_ICON;
+    hide('ID_CONTROLS_SPAN');
+    /*
+    hide('ID_HOME_IMAGE');
+    hide('ID_VIEW_ROIS');
+    hide('ID_ROIS_TEXT');
+    */
+    drawInitialCanvas();
+}
 
-    DisplayedImage.onload = function(){
 
-        var canvas  = document.getElementById('ID_CANVAS');
-        var ctx = canvas.getContext("2d");
+function drawInitialCanvas()
+{
 
-        var aspectRatioY = canvas.height / DisplayedImage.height;
-        canvas.width = DisplayedImage.width * aspectRatioY;
+    var canvas  = document.getElementById('ID_CANVAS');
+    var ctx = canvas.getContext("2d");
 
-        ctx.drawImage(DisplayedImage, 0, 0, DisplayedImage.width, DisplayedImage.height,
-                   0, 0, canvas.width, canvas.height);
-    }
+    ctx.fillStyle = COLOR_BACKGROUND;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    var x = Math.floor(canvas.width / 2) - 130;
+    var y = Math.floor(canvas.height / 2);
+    ctx.font = 'bold 40px Tahoma';
+    ctx.fillStyle = "#000000";
+    ctx.fillText(BANNER_ANNOUNCE, x, y);
+
+    x = Math.floor(canvas.width / 2) - 150;
+    y = canvas.height - 20;
+    ctx.font = 'normal 15px Tahoma';
+    ctx.fillStyle = "#000000";
+    //ctx.fillText(BANNER_HELP1, x, y);
+
+
 }
 
 //
@@ -247,6 +270,9 @@ function completeWithNoAction()
 //
 function completeImageLoad(imageURL, text, width, height)
 {
+    busyStateDeactivate();
+    show('ID_HOME_IMAGE');
+
     CurrentImageWidth = width;
     CurrentImageHeight = height;
     console.log("completeImageLoad: ", imageURL, text);
@@ -268,6 +294,7 @@ function completeImageLoad(imageURL, text, width, height)
         show('ID_NEXT_IMAGE');
     }
 
+    console.log("setting HOME", imageURL);
     document.getElementById('ID_HOME_IMAGE').src = imageURL;
 
     hide('ID_PREVIOUS_IMAGE');
@@ -286,6 +313,7 @@ function completeImageAnalysis(imagePath, regions)
 {
     console.log('completeImageAnalysis', imagePath, regions);
 
+    show('ID_CONTROLS_SPAN');
     CurrentRegions = regions;
     ListImageRegions[CurrentPosition] = regions; 
     displayRegions();
@@ -318,9 +346,9 @@ function completeImageAnalysis(imagePath, regions)
     else
         regionAttributes = 'Image Loaded and Analyzed: '+regionCount+' Regions Detected';
 
+    console.log('Setting STAT: ', regionAttributes);
 	document.getElementById('ID_IMAGE_STATS').innerHTML = regionAttributes;
     if (CurrentOp != null) displayOp(CurrentOp);
-	show('ID_VIEW_IMAGE');
 }
 
 //
@@ -375,7 +403,8 @@ function executeImageAnalysis()
 {
 	var imagePath = getCurrentImagePath();
 
-	document.getElementById('ID_IMAGE_STATS').innerHTML = 'DreamPerch Analyzing Image ...';
+    busyStateActivate();
+	document.getElementById('ID_IMAGE_STATS').innerHTML = 'Analyzing Image ...';
 
     var op = './ops/segmentx.php';
     $.post(ENDPOINT_SEGMENT, 
@@ -466,7 +495,8 @@ function displayRegions()
         ctx.strokeRect(x, y, width, height);
 
         ctx.font = 'normal 20px Arial';
-        ctx.strokeText(codeCharacter, x, y);
+        ctx.fillStyle = color;
+        ctx.fillText(codeCharacter, x, y);
         console.log('Drawing region: code x y w h ', codeCharacter, x, y, width, height);
         regionCount += 1;
     }
@@ -523,7 +553,8 @@ function renderCurrentImage()
 
         if (DisplayedImage == null) 
         {
-
+            drawInitialCanvas();
+            return;
         }
 
         var aspectRatioY = canvas.height / DisplayedImage.height;
@@ -599,6 +630,7 @@ function previousImage()
 
 function homeImage()
 {
+    console.log("homeImage");
 	CurrentPosition = 0;
 	displayCurrentImage();
 }
@@ -659,7 +691,10 @@ function hide(id)
 
 function show(id)
 {
-    document.getElementById(id).style.display = 'block';
+    console.log(id);
+    // CJM - must be INLINE for ID_CONTROLS_SPAN
+    document.getElementById(id).style.display = 'inline';
+    //document.getElementById(id).style.display = 'block';
 }
 
 

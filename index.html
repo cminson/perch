@@ -16,50 +16,51 @@ include "/var/www/perch/common/common.inc";
     <script src="./common/jquery-3.3.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="./common/trans.js"></script>
-    <!-- <script src="https://www.christopherminson.com/dev/common/jssocials.min.js"></script> -->
     <script src="./common/302pop.js"></script>
 
     <link href="./common/main.css"  type="text/css" rel="stylesheet">
     <script src="./common/main.js"></script>
 
-
 </head>
+
 
 <body onload="init()" style="text-align: center">
     <div id="home"></div>
-    <center>
-    </center>
 
-<div style="display: none" id="ID_HELP_AREA">
+<div style="background-color: white; height:65px" id="ID_HEADER-AREA">
+    <table  style="width: 100%; height: 100%; background-color: #d3d3d3; border: 1px solid black; border-collapse: separate;">
+    <tr>
 
-    <div style="position: fixed; top: 20px; right: 0px; width: 90px">
+    <td style="text-align: left;">
+    <img onclick="homeImage()" id="ID_HOME_IMAGE" height="50" src="http://54.71.108.91/CONVERSIONS/6731799.png" alt="">
+    </td>
+
+    <td style="text-align: center; white-space: nowrap;">
+        <span id="ID_CONTROLS_SPAN" style="text-align: center; width: 200px; font-size: 16px; font-weight: bold; white-space: pre; display: none">
+            <input onclick="toggleViewROIS()" type="checkbox" id="ID_VIEW_ROIS" name="scales" checked>&nbsp;Regions&nbsp;Visible&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a id="ID_VIEW_IMAGE" target="_blank" onclick="viewCurrentImage()" href="">View Image</a>
+        </span>
+    </td>
+
+    <td style="text-align: right">
     <img onclick="toggleHelpPage()" id="ID_CONTENT_IMAGE" height="50" src="./resources/navs/questionmark01.png" alt="">
-    <p>
-    </div>
-    <h1>DreemPerch Help</h1>
-</div> <!-- END ID_HELP_AREA -->
+    </td>
+    </tr>
+    </table>
 
+</div>
+
+
+<p><br>
 <div style="display: inline-block" id="ID_CONTENT_AREA">
 
-    <!-- Home Button.  Takes user to last loaded image -->
-    <div style="position: fixed; top: 20px; left: 20px; width: 90px">
-    <img onclick="homeImage()" id="ID_HOME_IMAGE" height="50" src="./resources/utils/trans.gif" alt="">
-    <p><br>
-    View Boxes&nbsp;&nbsp;
-    <p><br>
-    <input onclick="toggleViewROIS()" type="checkbox" id="ID_VIEW_ROIS" name="scales" checked>
-    <!--
-    <input onclick="test1()" type="button" id="ID_TEST1" value="TEST1" name="TEST">
-    <p><br>
-    <input onclick="test2()" type="button" id="ID_TEST2" value="TEST2" name="TEST">
-    <div id="ID_OBJECT_VALUES"></div>
+    <span class="stats" ID="ID_IMAGE_STATS">Click the Upload Arrow to Begin</span>
     <p>
-    -->
-    </div>
-    <div style="position: fixed; top: 20px; right: 0px; width: 90px">
-    <img onclick="toggleHelpPage()" id="ID_HELP_IMAGE" height="50" src="./resources/navs/questionmark01.png" alt="">
-    <p>
-    </div>
+    <!-- START IMAGE AREA  -->
+    <!-- 1.618 = GOLDEN RATIO -->
+        <center>
+        <canvas width="485" height="300" id="ID_CANVAS"></canvas>
+        </center>
+    <!-- END IMAGE AREA  -->
 
 
     <!-- hidden image load area - used by all op post calls -->
@@ -75,26 +76,6 @@ include "/var/www/perch/common/common.inc";
         </div>
     </form>
 
-    <!-- START IMAGE AREA  -->
-    <br>
-    <!--
-    <span style="vertical-align:middle; text-align: center; height: 14px; padding: 0px; white-space: nowrap; color: black; font-weight: normal; font-size: 12px;" id="ID_IMAGE_STATS">Welcome to DreamPerch - AI Enabled Art</span>
-    -->
-    <span class="stats" ID="ID_IMAGE_STATS">DreamPerch: Click the Upload Arrow to Begin</span>
-    <p>
-    <a class="viewImage" id="ID_VIEW_IMAGE" target="_blank" onclick="viewCurrentImage()" href="">View Image</a>
-    <br>
-
-        <center>
-        <canvas width="600" height="300" id="ID_CANVAS"></canvas>
-
-    <!-- END IMAGE AREA  -->
-
-
-<br>
-
-<!-- Share Button area [TBD] -->
-<div id="ID_SHARE_CONTAINER"></div>
 
 
 <!-- START NAV BUTTONS -->
@@ -123,7 +104,9 @@ include "/var/www/perch/common/common.inc";
 <br><img width="750" height="1" src="./resources/utils/whitepixel.jpg" alt="">
 
 <div style="text-align: center; display: none" id="ID_RETURN_TO_MAINPAGE">
+    <center>
 <a class="mainpagereturnlink" HREF="#home" onclick=returnToMainArea()>Return To Main Page</a>
+    </center>
 </div>
 
 <!-- START MAINCONTAINER  -->
@@ -189,8 +172,8 @@ include $BASE_PATH."/ops/opcol3.php";
 <!--
 This is where images are stored for hit testing
 Used by Transparency
--->
 <canvas id="ID_HIDDEN_IMAGE" width="1000" height="1000" style="display:none"></canvas>
+-->
 
 
 </div> <!-- END ID_CONTENT_AREA -->
@@ -198,7 +181,6 @@ Used by Transparency
 <!--
 
 -->
-<img id='ID_HIDDEN_IMAGE' style="display: none">
 
 </body>
 </html>
