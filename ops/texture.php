@@ -1,17 +1,18 @@
 <?php
-
 include '../common/common.inc';
 APPLOG('Texture');
 
-$labels = array('Glass Tiles', 'Golden', 'Granite', 'History', 'Ice', 'Marble', 'Metal', 'Old Paper', 'Sand', 'Sketch', 'Silk', 'Wet Clay', 'Ripples', 'Snakes', 'Curves');
-$args = array('GLASSTILES', 'GOLD', 'GRANITE', 'HISTORY', 'ICE', 'MARBLE', 'METAL', 'OLDPAPER', 'SAND', 'SKETCH', 'SILK', 'WETCLAY', 'RIPPLES', 'SNAKES', 'CURVES');
+$LABELS = array('Glass Tiles', 'Golden', 'Granite', 'History', 'Ice', 'Marble', 'Metal', 'Old Paper', 'Sand', 'Sketch', 'Silk', 'Wet Clay', 'Ripples', 'Snakes', 'Curves');
+$VALUES = array('GLASSTILES', 'GOLD', 'GRANITE', 'HISTORY', 'ICE', 'MARBLE', 'METAL', 'OLDPAPER', 'SAND', 'SKETCH', 'SILK', 'WETCLAY', 'RIPPLES', 'SNAKES', 'CURVES');
 
-DisplayTitle('Reformat: Change Image Format');
+DisplayTitle('Texture Image');
+
 DisplayFormStart();
 DisplayRegionPicker('Target Region','REGION');
 DisplayLineSep1();
-DisplaySelectionPicker($labels, $args);
+DisplayOpPicker($LABELS, $VALUES, 0);
 DisplayLineSep1();
+DisplayConvertButton();
 DisplayFormEnd();
 
 ?>

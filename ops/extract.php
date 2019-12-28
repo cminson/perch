@@ -3,11 +3,9 @@ include '../common/common.inc';
 APPLOG('EXTRACT');
 
 $Title = 'Extract Image';
-
-DisplayTitle('Extract Image Elements');
+DisplayTitle('Extract Image Element');
 DisplayFormStart();
-DisplayRegionPicker('Target Region','REGION');
-DisplayLineSep1();
+DisplayRegionPicker();
 DisplayLineSep1();
 DisplayConvertButton();
 DisplayFormEnd();

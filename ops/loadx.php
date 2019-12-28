@@ -88,7 +88,7 @@ APPLOG("XLOAD REGIONS: $regions");
 
 
 // inform javascript caller that the image is loaded and ready for display
-$LastOperation = "Image Loaded";
+$stats = "Image Loaded";
 APPLOG("LOADX SUCCESS $outputFilePath");
 echo '<html><head><title>-</title></head><body>';
 echo '<script language="JavaScript" type="text/javascript">'."\n";

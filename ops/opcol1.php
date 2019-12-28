@@ -4,7 +4,7 @@ print "<table class=\"ops\">\n";
 DisplayOpButton("Adjust","adjust.php");
 DisplayOpButton("Enhance","enhance.php");
 DisplayOpButton("Label","label.php");
-DisplayOpButton("Tint","tint.php");
+DisplayOpButton("Color","tint.php");
 DisplayOpButton("Texture","texture.php");
 print "</table>\n";
 ?>

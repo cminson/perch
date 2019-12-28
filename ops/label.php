@@ -2,26 +2,26 @@
 include '../common/common.inc';
 APPLOG('LABEL');
 
-$DEFAULT="ariali.ttf.png";
-
 DisplayTitle('Label Image');
+
 DisplayFormStart();
 DisplayRegionPicker('Target Region','REGION');
-DisplaySep1();
-DisplayTextInput('Line 1','LABEL1','text',60);
-DisplayLineSep0();
-DisplayTextInput('Line 2','LABEL2','',60);
 DisplayLineSep1();
-DisplayPositionPicker('Position', 'POSITION', True);
-DisplayLineSep1();
-DisplayFontPicker('Font', 'Helvetica', 'FONTS');
+DisplayTextInput('Label:&nbsp;','LABEL1','text', 30);
 DisplaySep4();
-DisplayFontSizePicker('Size','FONTSIZE',20);
+DisplayPositionPicker('Position:&nbsp;', 'POSITION', True);
 DisplayLineSep1();
-DisplayColorSelector('Font Color', 'White', 'LABELCOLOR', False);
+DisplayColorSelector('Font Color:&nbsp;', 'White', 'LABELCOLOR', False);
 DisplaySep4();
-DisplayColorSelector('Background Color', 'Black', 'BACKGROUNDCOLOR', True);
+DisplayColorSelector('Background Color:&nbsp', 'Black', 'BACKGROUNDCOLOR', True);
+DisplayLineSep1();
+DisplaySep4();
+DisplayFontPicker('Font:&nbsp;', 'Helvetica', 'FONTS');
+DisplaySep4();
+DisplayFontSizePicker('Size:&nbsp;','FONTSIZE',20);
+DisplayLineSep1();
 DisplaySep1();
 DisplayConvertButton();
 DisplayFormEnd();
+
 ?>

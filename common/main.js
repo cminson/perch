@@ -148,7 +148,7 @@ function submitFile()
 //
 function submitOpForm()
 {
-	document.getElementById('ID_IMAGE_STATS').innerHTML = 'Loading Image ...';
+	document.getElementById('ID_IMAGE_STATS').innerHTML = 'Processing Image ...';
 
     // Don't want to block.  
     // Therefore run submission in background, not in main thread
@@ -348,6 +348,7 @@ function completeImageAnalysis(imagePath, regions)
 
     console.log('Setting STAT: ', regionAttributes);
 	document.getElementById('ID_IMAGE_STATS').innerHTML = regionAttributes;
+    ListImageStats[CurrentPosition] = regionAttributes;
     if (CurrentOp != null) displayOp(CurrentOp);
 }
 

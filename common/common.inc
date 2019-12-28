@@ -171,6 +171,12 @@ function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePa
     global $LastOperation;
     global $Region;
 
+    if ($Region == 'ALL')
+    {
+        $LastOperation .=  "  Entire Image";
+        return $convertedFilePath;
+    }
+
     $transColor = "'#fe00fe'";
     $tmpFilePath = NewTMPImagePath();
     $script = "convert -fill $transColor -opaque black -fuzz 1% $maskFilePath $tmpFilePath";
@@ -196,29 +202,6 @@ function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePa
     $script = "composite -geometry +0+0 $tmp2FilePath $originalFilePath $resultFilePath";
     ExecScript($script);
     APPLOG($script);
-
-    /*
-    $cutterFilePath = NewImagePath();
-    $script = "convert -transparent white -fuzz 1% $maskFilePath $cutterFilePath";
-    ExecScript($script);
-    APPLOG($script);
-
-    $tmp1FilePath = NewTMPImagePath();
-    $script = "composite -geometry +0+0 $cutterFilePath $convertedFilePath $tmp1FilePath";
-    ExecScript($script);
-    APPLOG($script);
-
-    $tmp2FilePath = NewTMPImagePath();
-    $script = "convert -transparent black -fuzz 0% $tmp1FilePath $tmp2FilePath";
-    ExecScript($script);
-    APPLOG($script);
-
-    $resultFilePath = NewImagePath();
-    $script = "composite -geometry +0+0 $tmp2FilePath $originalFilePath $resultFilePath";
-    ExecScript($script);
-    APPLOG($script);
-
-     */
 
     APPLOG("APPLY FINAL $resultFilePath");
     $regionName = explode('.', $Region)[2];
@@ -374,7 +357,7 @@ function GetImageRegions($imagePath)
 }
 
 
-function DisplayRegionPicker($text, $name)
+function DisplayRegionPicker()
 {
     global $CurrentRegions;
     global $CurrentImage;
@@ -383,9 +366,9 @@ function DisplayRegionPicker($text, $name)
     $regionList = explode(',', $CurrentRegions);
     APPLOG("DisplayRegionPicker SelectedRegion:  $SelectedRegion");
 
-	print  $text;
+	print('Target Region:&nbsp;');
 	DisplaySep0();
-	print  "<select onchange=\"saveRegionSelection()\" id=\"ID_SELECT_REGION\" name=\"$name\">\n";
+	print  "<select onchange=\"saveRegionSelection()\" id=\"ID_SELECT_REGION\" name=\"REGION\">\n";
 
     if ($SelectedRegion == "ALL")
 	    print  "<option value=\"ALL\" selected>Entire Image\n";
@@ -681,9 +664,8 @@ function DisplayConvertButton()
 {
 global $PATH_OPS;
 
-	print "<P><BR>";
 	print "<center>";
-    print "<button class=\"convert\" type=\"button\" onclick=\"submitOpForm()\")>Convert</button>\n";
+    print "<button class=\"convert\" type=\"button\" onclick=\"submitOpForm()\")>Execute</button>\n";
 	print "</center>";
 }
 
@@ -819,9 +801,9 @@ function DisplayFormEnd()
 
 function DisplayTitle($title)
 {
+    //print "<center><h2 onclick=returnToMainArea()>$title</h2></center>";
+    print "<center><h2>$title</h2></center>";
     print "<p>\n";
-    print "<hr>\n";
-    print "<center><h2 onclick=returnToMainArea()>$title</h2></center>";
 }
 
 
@@ -1176,8 +1158,6 @@ function NewDisplayRegionPicker($regions, $args)
 
 
 
-
-
 function TestDisplaySelectionPicker($labels, $args)
 {
     for ($i = 0; $i < count($labels); $i++)
@@ -1188,6 +1168,44 @@ function TestDisplaySelectionPicker($labels, $args)
         print "<button class=\"argHandler\" onclick=\"selectArg('$arg')\">$label</button>\n";
 
     }
+}
+
+
+function DisplayOpPicker($labels, $values, $default)
+{
+	print "Operation:&nbsp;";
+	DisplaySep0();
+	print "<select name=\"OP\" id=\"OP\">\n";
+	$i = 0;
+	foreach ($values as $v)
+	{
+		$s = $labels[$i];
+		if ($default == $i)
+			print("<option value=\"$v\" selected>$s\n");
+		else
+			print("<option value=\"$v\">$s\n");
+		$i++;
+	}
+	print("</select>\n");
+}
+
+
+function DisplaySettingPicker($min,$max,$selected)
+{
+	print('Setting:&nbsp');
+	DisplaySep0();
+	print  "<select name=\"SETTING\">\n";
+	$i = $min;
+	while ($i <= $max)
+	{
+		if ($i == $selected)
+			print  "<option value=\"$i\" selected>$i\n";
+		else
+			print  "<option value=\"$i\">$i\n";
+
+		$i++;
+	}
+	print  "</select>\n";
 }
 
 

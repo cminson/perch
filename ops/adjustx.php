@@ -51,17 +51,16 @@ case "DOWN_SHARP":
 	break;
 };
 
+$LastOperation .= ':';
+
 $outputFilePath = NewImagePath();
 $command = "$command $inputFilePath $outputFilePath";
 $execResult = exec("$command 2>&1", $lines, $ConvertResultCode);
 APPLOG("ADJUST $Arg $command $outputFilePath");
 
-if ($Region != 'ALL') {
-
-    APPLOG("Applying Region Operation").
-    $maskFilePath = GetConversionPath($Region);
-    $outputFilePath = ApplyRegionOperation($inputFilePath, $outputFilePath, $maskFilePath);
-}
+APPLOG("Applying Region Operation").
+$maskFilePath = GetConversionPath($Region);
+$outputFilePath = ApplyRegionOperation($inputFilePath, $outputFilePath, $maskFilePath);
 
 APPLOG("FINAL $Arg $command $outputFilePath");
 

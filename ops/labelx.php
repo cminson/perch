@@ -6,18 +6,12 @@ $labelColor = $_POST['LABELCOLOR'];
 $backgroundColor = $_POST['BACKGROUNDCOLOR'];
 $pointSize = $_POST['FONTSIZE'];
 $font = $_POST['FONTS'];
-$label1 = $_POST['LABEL1'];
-$label2 = $_POST['LABEL2'];
+$label = $_POST['LABEL1'];
 $position = $_POST['POSITION'];
 $Region = $_POST['REGION'];
 
 if (isset($font) == FALSE) $font = "Helvetica";
 if (isset($pointSize) == FALSE) $pointSize = 20;
-
-if (strlen($label2) > 0)
-    $label = "$label1\n$label2";
-else
-    $label = "$label1";
 
 $originalFilePath = $inputFilePath = GetCurrentImagePath();
 $inputFilePath = ExtractRegionImage($inputFilePath, $Region);
