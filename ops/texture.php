@@ -1,4 +1,4 @@
-<?php
+<?php 
 include '../common/common.inc';
 APPLOG('Texture');
 
@@ -8,7 +8,7 @@ $VALUES = array('GLASSTILES', 'GOLD', 'GRANITE', 'HISTORY', 'ICE', 'MARBLE', 'ME
 DisplayTitle('Texture Image');
 
 DisplayFormStart();
-DisplayRegionPicker('Target Region','REGION');
+DisplayRegionPicker();
 DisplayLineSep1();
 DisplayOpPicker($LABELS, $VALUES, 0);
 DisplayLineSep1();

@@ -49,25 +49,30 @@ def computeBackgroundRegion(file_name,regionFileList):
 
     if len(regionFileList) == 0: return
 
-    img = Image.open(regionFileList[0])
-    background_bitmap = np.array(img)
-    width, height = img.size
+    image_region = Image.open(regionFileList[0])
+    background_bitmap = np.array(image_region)
+    width, height = image_region.size
     object_name = 'background'
     score = '99'
     x = y = 0
 
     for regionFile in regionFileList:
 
-        img = Image.open(regionFile)
-        bitmap = np.array(img)
+        image_region = Image.open(regionFile)
+        bitmap = np.array(image_region)
         background_bitmap = np.logical_or(background_bitmap, bitmap).astype(np.uint8)
 
-    background_bitmap[background_bitmap == 255] = 0
-    background_bitmap[background_bitmap == 0] = 255
+    background_bitmap[background_bitmap == 1] = 255
+    background_inverted_bitmap = np.invert(background_bitmap, dtype=np.uint8)
+    """
+    print(np.count_nonzero(background_bitmap == 255))
+    print(np.count_nonzero(background_bitmap == 1))
+    print(np.count_nonzero(background_bitmap == 0))
+    """
 
     file_name = f'../CONVERSIONS/m{file_name}.{score}.{object_name}.{x}_{y}_{width}_{height}.png'
-    img = Image.fromarray(background_bitmap, 'L')
-    img.save(file_name, 'PNG')
+    image_background = Image.fromarray(background_inverted_bitmap, 'L')
+    image_background.save(file_name, 'PNG')
 
 
 if __name__ == '__main__':
@@ -77,8 +82,8 @@ if __name__ == '__main__':
         print('ERROR', end='')
         exit()
 
-    inputFileDir = sys.argv[1]
-    file_name =  os.path.basename(inputFileDir).split('.')[0]
+    inputFilePath = sys.argv[1]
+    file_name =  os.path.basename(inputFilePath).split('.')[0]
     #print(file_name)
 
     # Locally import Mask RCNN and coco
@@ -101,8 +106,10 @@ if __name__ == '__main__':
     model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_PATH, config=config)
     model.load_weights(MODEL_WEIGHTS_PATH, by_name=True)
 
-    image = skimage.io.imread(inputFileDir)
-    results = model.detect([image], verbose=1)
+    image_input = Image.open(inputFilePath)
+    input_width, input_height = image_input.size
+    image_input = skimage.io.imread(inputFilePath)
+    results = model.detect([image_input], verbose=1)
 
     result = results[0]
     class_ids = result['class_ids']
@@ -132,15 +139,58 @@ if __name__ == '__main__':
         width = x2 - x1
         height = y2 - y1
 
-        outputFileDir = f'../CONVERSIONS/m{file_name}.{score}.{object_name}.{x1}_{y1}_{width}_{height}.png'
-        #print(outputFileDir)
-        im = Image.fromarray(bitmap, 'L')
-        im.save(outputFileDir, 'PNG')
+        outputFilePath = f'../CONVERSIONS/m{file_name}.{score}.{object_name}.{x1}_{y1}_{width}_{height}.png'
+        #print(outputFilePath)
+        image_region = Image.fromarray(bitmap, 'L')
+        image_region.save(outputFilePath, 'PNG')
 
-        #logging.debug(f'{outputFileDir}')
-        regionFileList.append(outputFileDir)
+        #logging.debug(f'{outputFilePath}')
+        regionFileList.append(outputFilePath)
+
+        if object_name == 'person':
+            print('person bitmap seen')
+            person_bitmap = bitmap
 
 
     computeBackgroundRegion(file_name, regionFileList)
+
+
+
+import cv2
+cascade = '/usr/local/lib/python3.6/dist-packages/cv2/data'
+cascPath = '/usr/local/lib/python3.6/dist-packages/cv2/data/haarcascade_frontalface_default.xml'
+eyePath = '/usr/local/lib/python3.6/dist-packages/cv2/data/haarcascade_eye.xml'
+smilePath = '/usr/local/lib/python3.6/dist-packages/cv2/data/haarcascade_smile.xml'
+faceCascade = cv2.CascadeClassifier(cascPath)
+eyeCascade = cv2.CascadeClassifier(eyePath)
+smileCascade = cv2.CascadeClassifier(smilePath)
+
+object_name = 'face'
+score = 99
+
+faces = faceCascade.detectMultiScale(
+image_input,
+scaleFactor=1.1,
+minNeighbors=5,
+flags=cv2.CASCADE_SCALE_IMAGE
+)
+for (x, y, w, h) in faces:
+    outputFilePath = f'../CONVERSIONS/m{file_name}.{score}.{object_name}.{x}_{y}_{w}_{h}.png'
+    print(outputFilePath)
+    bitmap = np.zeros([input_height, input_width], dtype = np.uint8)
+    #bitmap[bitmap > 0] = 255
+    #testing
+    x = x - 20
+    y = y - 20
+    w = w + 40
+    h = h + 40
+    bitmap[y:y+h, x:x+w] = 255
+    face_bitmap = np.logical_and(person_bitmap, bitmap).astype(np.uint8)
+    face_bitmap[face_bitmap == 1] = 255
+    image_face = Image.fromarray(face_bitmap, 'L')
+    image_face.save(outputFilePath, 'PNG')
+
+
+
 
 

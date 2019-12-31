@@ -115,7 +115,7 @@ function ExtractRegionImage($imageFilePath, $region)
 
     $tmpFilePath = $outputFilePath;
     $outputFilePath = NewImagePath();
-    $script = "convert -crop $cropDim -transparent white $tmpFilePath $outputFilePath";
+    $script = "convert -crop $cropDim -transparent white +repage $tmpFilePath $outputFilePath";
     ExecScript($script);
     APPLOG("$script");
 
@@ -364,7 +364,6 @@ function DisplayRegionPicker()
     global $SelectedRegion;
 
     $regionList = explode(',', $CurrentRegions);
-    APPLOG("DisplayRegionPicker SelectedRegion:  $SelectedRegion");
 
 	print('Target Region:&nbsp;');
 	DisplaySep0();
@@ -378,7 +377,6 @@ function DisplayRegionPicker()
     $regionCount = 0;
     foreach ($regionList as $regionFile)
     {
-        APPLOG('DisplayRegionPicker Region Value: ', $regionFile);
         $terms = explode('.', $regionFile);
         $regionName = $terms[2];
         $regionDimensions = explode('_', $terms[3]);

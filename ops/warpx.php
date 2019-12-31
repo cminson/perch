@@ -1,9 +1,9 @@
 <?php
 include '../common/common.inc';
 
-$LastOperation = 'Warped:';
+$LastOperation = 'Warped';
 
-$Arg = $_POST['ARG1'];
+$Op = $_POST['OP'];
 $Setting = $_POST['SETTING'];
 $Region = $_POST['REGION'];
 
@@ -13,7 +13,7 @@ APPLOG("WARP inputFilePath: $inputFilePath");
 
 $outputFilePath = NewImagePath();
 
-switch ($Arg)
+switch ($Op)
 {
 case 'ENCIRCLE':
 
@@ -22,8 +22,7 @@ case 'ENCIRCLE':
     $setting = $Setting * 36;
 	$script = "convert -virtual-pixel Background -distort arc $setting  -background transparent +repage $inputFilePath $outputFilePath";
     ExecScript($script);
-
-    $LastOperation = "$LastOperation Bent $Setting";
+    $Description = 'Bent';
     break;
 case 'EXPLODE':
     $setting = $Setting * -0.5;
@@ -33,18 +32,19 @@ case 'EXPLODE':
 	$script = "convert  -region 150x150+0+0 -implode $setting $inputFilePath $outputFilePath";
 	$script = "convert -region 150x150+0+0 -virtual-pixel Background -implode $setting  -background white +repage $inputFilePath $outputFilePath";
      */
-    $LastOperation = "$LastOperation Exploded $Setting";
+    $Description = "Exploded";
     break;
 case 'IMPLODE':
     $setting = $Setting * 0.5;
 	$script = "convert -virtual-pixel Background -implode $setting  -background white +repage $inputFilePath $outputFilePath";
+    $Description = "Imploded";
     break;
 case 'FRACTALIZE':
     $spread = $Setting;
     $density = $Setting;
     $curve = $Setting;
     $script = "../shells/disperse.sh -s $spread -d $density -c $curve $inputFilePath $outputFilePath";
-    $LastOperation = "$LastOperation Fractilized $Setting";
+    $Description = "Fractalized";
     break;
 case 'KAL':
     //$inputFilePath = RemoveTransparency($inputFilePath);
@@ -54,7 +54,7 @@ case 'KAL':
     //ExecScript($script);
     //APPLOG($script);
 
-    $LastOperation = "$LastOperation Kaleidoscoped $Setting";
+    $Description = "Kaleidoscoped";
 
     //$outputFilePath = ReshapeToRegion($Region, $outputFilePath);
 
@@ -62,12 +62,14 @@ case 'KAL':
     break;
 case 'PIXEL':
     $script = "convert -scale 10% -scale 1000% $inputFilePath $outputFilePath";
+    $script = "convert -scale 1% -scale 10000% $inputFilePath $outputFilePath";
+    $Description = "Pixeled";
     break;
 case 'SPLICE':
     $direction = 'x';
     $setting = $Setting;
     $script = "../shells/stutter.sh -s $setting -d $direction $inputFilePath $outputFilePath";
-
+    $Description = "Spliced";
 }
 
 APPLOG("WARP $script");
@@ -78,12 +80,18 @@ $y = $ExtractedRegionOriginY;
 
 if ($Region != 'ALL')
 {
+    $regionName = explode('.', $Region)[2];
+
     $regionFilePath = $outputFilePath;  
     $outputFilePath = NewImagePath();
     $script = "composite -geometry +$x+$y $regionFilePath $originalFilePath $outputFilePath";
     ExecScript($script);
     APPLOG($script);
-    $LastOperation .=  " $Region";
+    $LastOperation = "$LastOperation $Description:  $regionName";
+}
+else
+{
+    $LastOperation = "$LastOperation $Description:  Entire Image";
 }
 
 InformUILayer('WARP',$outputFilePath,$REGIONS_PREVIOUS);
