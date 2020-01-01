@@ -120,11 +120,12 @@ function drawInitialCanvas()
 //
 function chooseFile() 
 {
+
 	var inputForm  = document.getElementById('ID_SUBMIT_FILE');
 	inputForm.value=""; //  MUST do this to avoid load caching!
 
     // make sure we're at top of page
-    window.location.href = "#home";
+     window.location.href = "#home";
 
     // click the button.  This will bring up the file chooser
     // which will then execute submitFile() once an image is selected
@@ -138,9 +139,11 @@ function chooseFile()
 //
 function submitFile() 
 {
+    console.log('submitFile');
     document.getElementById('ID_LOAD_FORM').submit();
 	busyStateActivate();
 }
+
 
 //
 // Submit the operation form.  This gets called when
@@ -256,6 +259,7 @@ function displayOp(op)
 //
 function completeWithNoAction()
 {
+    console.log('completeWithNoAction');
 	enableConvertButton();
 	busyStateDeactivate();
 	if (CurrentPosition < 1)
@@ -270,6 +274,7 @@ function completeWithNoAction()
 //
 function completeImageLoad(imageURL, text, width, height)
 {
+    console.log('completeImageLoad');
     busyStateDeactivate();
     show('ID_HOME_IMAGE');
 
@@ -300,6 +305,7 @@ function completeImageLoad(imageURL, text, width, height)
     hide('ID_PREVIOUS_IMAGE');
     hide('ID_NEXT_IMAGE');
 
+    //DEV CJM
     // have the AI analyze the image for regions of interest (ROI)
     executeImageAnalysis();
 }
@@ -701,6 +707,7 @@ function show(id)
 
 function reportOpError(error)
 {
+    console.log('reportOpError');
 	busyStateDeactivate();
 	document.getElementById('ID_IMAGE_STATS').innerHTML = error;
 }
@@ -710,6 +717,7 @@ function reportLoadError(error)
 {
 var e;
 
+    console.log('reportLoadError');
 	busyStateDeactivate();
 	show('ID_MAIN_SLIDER');
 	if (CurrentPosition < 1)
@@ -803,3 +811,34 @@ function saveRegionSelection()
     console.log('getRegionSelection', SelectedRegion);
 
 }
+
+
+function chooseSecondaryImage() 
+{
+    console.log('chooseSecondaryImage');
+    e = document.getElementById('FRAME1');
+    e = document.getElementById('SECONDARY_IMAGE');
+    console.log(e);
+    e  = document.getElementById('SUBMITIMAGE');
+    e.value=""; // CJM - MUST do this to avoid load caching!
+    e.click();
+}
+
+function submitSecondaryImage() 
+{
+    console.log('submitSecondaryImage');
+    document.getElementById('ID_LOAD_SECONDARY_IMAGE').submit();
+}
+
+function completeSecondaryImageLoad(imageURL, text, width, height)
+{
+    console.log('completeSecondaryImageLoad:', imageURL);
+    document.getElementById('SECONDARY_IMAGE').src = imageURL;
+
+    //DEV CJM
+    // have the AI analyze the image for regions of interest (ROI)
+    //executeImageAnalysis();
+}
+
+
+

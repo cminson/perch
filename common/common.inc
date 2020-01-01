@@ -363,6 +363,7 @@ function DisplayRegionPicker()
     global $CurrentImage;
     global $SelectedRegion;
 
+    APPLOG("DisplayRegionPicker");
     $regionList = explode(',', $CurrentRegions);
 
 	print('Target Region:&nbsp;');
@@ -377,6 +378,7 @@ function DisplayRegionPicker()
     $regionCount = 0;
     foreach ($regionList as $regionFile)
     {
+        APPLOG($regionFile);
         $terms = explode('.', $regionFile);
         $regionName = $terms[2];
         $regionDimensions = explode('_', $terms[3]);
