@@ -89,6 +89,6 @@ APPLOG("Applying Region Operation").
 $maskFilePath = GetConversionPath($Region);
 $outputFilePath = ApplyRegionOperation($inputFilePath, $outputFilePath, $maskFilePath);
 
-InformUILayer("ENHANCE",$outputFilePath,$REGIONS_PREVIOUS);
+NotifyUI("ENHANCE",$outputFilePath,$REGIONS_PREVIOUS);
 
 ?>

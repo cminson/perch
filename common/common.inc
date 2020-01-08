@@ -153,16 +153,11 @@ function CompleteWithNoAction()
 {
     global $CurrentImage;
 
-	if (strlen($CurrentImage) < 3)
-	{
         APPLOG($CurrentImage);
         echo '<html><head><title>-</title></head><body>';
         echo '<script language="JavaScript" type="text/javascript">'."\n";
         echo "parent.completeWithNoAction();";
         echo "\n".'</script></body></html>';
-		return TRUE;
-	}
-	return FALSE;
 }
 
 
@@ -463,7 +458,7 @@ function ReportError($error)
 }
 
 
-function InformUILayer($op,$outputFilePath,$regions)
+function NotifyUI($op,$outputFilePath,$regions)
 {
 global $LastOperation;
 

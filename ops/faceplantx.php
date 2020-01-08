@@ -4,34 +4,27 @@ APPLOG('FacePlant');
 
 /*
 Paste the source region image into the target region image.
-
-Algorithm:
-
-1) Extract the source image region
-2) Resize it to same diminsions as target region
-3) Paste the resized source image into the target image
 */
 
 $LastOperation = 'Face Plant: ';
 
 $targetImagePath = GetCurrentImagePath();
-//$targetRegionPath = $_POST['REGION'];
-$faceRegions = GetImageRegions($targetImagePath, 'FACE');
-if (count($faceRegions) == 0) 
+
+$Region = $_POST['REGION'];
+$targetRegionPath = GetConversionPath($Region);
+APPLOG("faceRegionPath $targetRegionPath");
+
+/*
+if (stristr($Region, 'FACE') == False)
 {
     APPLOG('No Face Regions');
     CompleteWithNoAction();
     exit(0);
 }
-$targetRegionPath = $faceRegions[0];
-$targetRegionPath = GetConversionPath($targetRegionPath);
-
-APPLOG("Target Region: $targetRegionPath");
+ */
 
 $sourceImagePath = GetConversionPath($_POST['ID_SECONDARY_IMAGE_PATH']);
 $faceRegionPath = GetConversionPath($_POST['ID_SECONDARY_REGION_PATH']);
-
-$outputImagePath = NewImagePath();
 
 APPLOG("TargetImage: $targetImagePath  TargetRegion: $targetRegionPath  SourceImage: $sourceImagePath  SourceRegion: $faceRegionPath");
 
@@ -43,12 +36,10 @@ APPLOG("TargetImage: $targetImagePath  TargetRegion: $targetRegionPath  SourceIm
  * 2) The mask this face, resized to the target face
  */
 
-$outputImagePath = NewImagePath();
-$faceRegionPath = GetConversionPath($faceRegionPath);
-APPLOG("faceRegionPath $maskImagePath");
 
 /* prepare face mask */
 $cutterImagePath = NewTMPImagePath();
+$outputImagePath = NewImagePath();
 $script = "convert -transparent white -fuzz 40% $faceRegionPath $cutterImagePath";
 ExecScript($script);
 APPLOG("$script");
@@ -124,5 +115,5 @@ shell_exec($script);
 APPLOG("MLCOMPOSITE: $script");
 
 
-InformUILayer('FACEPLANT', $outputImagePath, $REGIONS_PREVIOUS);
+NotifyUI('FACEPLANT', $outputImagePath, $REGIONS_PREVIOUS);
 ?>

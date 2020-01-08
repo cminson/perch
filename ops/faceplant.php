@@ -2,8 +2,6 @@
 include '../common/common.inc';
 APPLOG('FACEPLANT');
 
-
-
 // hidden frame image load area
 print "<iframe id=\"upload_target\" name=\"upload_target\" src=\"#\" style=\"width:0;height:0px;border:1px solid #fff; display: none\"></iframe>\n\n";
 
@@ -15,8 +13,7 @@ print "</div>\n";
 print "</form>\n";
 
 
-
-DisplayTitle('Extract Face');
+DisplayTitle('Face Plant');
 DisplayFormStart();
 DisplayRegionPicker();
 DisplayLineSep1();

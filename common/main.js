@@ -259,9 +259,14 @@ function displayOp(op)
 //
 function completeWithNoAction()
 {
+	var stats = ListImageStats[CurrentPosition];
+
+	stats = "[" + (CurrentPosition+1) + "/" + ListImageStats.length + "] " + stats;
+
     console.log('completeWithNoAction');
 	enableConvertButton();
 	busyStateDeactivate();
+	document.getElementById('ID_IMAGE_STATS').innerHTML = '(No Operation Executed) '+stats;
 	if (CurrentPosition < 1)
 	{
 		//hide('imagearea');
@@ -824,6 +829,8 @@ function chooseSecondaryImage()
 function submitSecondaryImage() 
 {
     console.log('submitSecondaryImage');
+    //CJM DEV - this is where busy image goes
+    //document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
     document.getElementById('ID_LOAD_SECONDARY_IMAGE').submit();
 }
 
@@ -833,8 +840,10 @@ function completeSecondaryImageLoad(imageURL, text, width, height)
 
     var imageArray = imageURL.split("/");
 	imagePath =  CONVERSIONS_PATH+imageArray[imageArray.length - 1];
+    /*
     document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
     document.getElementById('ID_SECONDARY_IMAGE_PATH').value = imagePath;
+    */
 
     var op = './ops/segmentx.php';
     $.post(ENDPOINT_SEGMENT, 
@@ -851,6 +860,8 @@ function completeSecondaryImageLoad(imageURL, text, width, height)
                 if (region.includes('face')) {
                     console.log('face seen', region);
                     document.getElementById('ID_SECONDARY_REGION_PATH').value = region;
+                    document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
+                    document.getElementById('ID_SECONDARY_IMAGE_PATH').value = imagePath;
                 }
 
             }
