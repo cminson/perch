@@ -64,6 +64,6 @@ $outputFilePath = ApplyRegionOperation($inputFilePath, $outputFilePath, $maskFil
 
 APPLOG("FINAL $Arg $command $outputFilePath");
 
-InformUILayer($LastOperation, $outputFilePath, $REGIONS_PREVIOUS);
+NotifyUI($LastOperation, $outputFilePath, $REGIONS_PREVIOUS);
 
 ?>

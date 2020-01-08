@@ -25,5 +25,5 @@ if ($Region != 'ALL')
     $LastOperation .=  " $Region";
 }
 
-InformUILayer('CARTORN',$outputFilePath,$REGIONS_PREVIOUS);
+NotifyUI('CARTORN',$outputFilePath,$REGIONS_PREVIOUS);
 ?>

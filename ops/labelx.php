@@ -51,6 +51,6 @@ if ($Region != 'ALL')
 }
 
 
-InformUILayer('LABEL',$outputFilePath,$REGIONS_PREVIOUS);
+NotifyUI('LABEL',$outputFilePath,$REGIONS_PREVIOUS);
 
 ?>

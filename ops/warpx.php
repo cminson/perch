@@ -94,7 +94,7 @@ else
     $LastOperation = "$LastOperation $Description:  Entire Image";
 }
 
-InformUILayer('WARP',$outputFilePath,$REGIONS_PREVIOUS);
+NotifyUI('WARP',$outputFilePath,$REGIONS_PREVIOUS);
 
 
 
