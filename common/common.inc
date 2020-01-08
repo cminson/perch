@@ -324,7 +324,8 @@ function compare_area($a, $b)
     return strnatcmp($a['area'], $b['area']);
 }
 
-function GetImageRegions($imagePath)
+
+function GetImageRegions($imagePath, $filter)
 {
     global $CONVERSION_PATH;
 
@@ -336,6 +337,10 @@ function GetImageRegions($imagePath)
     $regionList = array();
     foreach ($regionPathList as $regionPath)
     {
+        if ($filter != null) 
+        {
+            if (stristr($regionPath, $filter) == FALSE) continue;
+        }
         $region = basename($regionPath);
         $dim = explode('.', $region)[3];
         $width = explode('_', $dim)[2];
@@ -665,7 +670,7 @@ function DisplayConvertButton()
 global $PATH_OPS;
 
 	print "<center>";
-    print "<button class=\"convert\" type=\"button\" onclick=\"submitOpForm()\")>Execute</button>\n";
+    print "<button class=\"convert\" type=\"button\" onclick=\"executeConversion()\")>Execute</button>\n";
 	print "</center>";
 }
 

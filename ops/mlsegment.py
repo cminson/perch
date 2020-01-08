@@ -179,11 +179,14 @@ for (x, y, w, h) in faces:
     print(outputFilePath)
     bitmap = np.zeros([input_height, input_width], dtype = np.uint8)
     #bitmap[bitmap > 0] = 255
+
     #testing
+    """
     x = x - 20
     y = y - 20
     w = w + 40
     h = h + 40
+    """
     bitmap[y:y+h, x:x+w] = 255
     face_bitmap = np.logical_and(person_bitmap, bitmap).astype(np.uint8)
     face_bitmap[face_bitmap == 1] = 255

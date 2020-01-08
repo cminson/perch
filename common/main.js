@@ -146,16 +146,16 @@ function submitFile()
 
 
 //
-// Submit the operation form.  This gets called when
-// user clicks the Convert button
+// Execute the conversion by submitting  the operation form.  This gets 
+// called when user clicks the Convert button
 //
-function submitOpForm()
+function executeConversion()
 {
 	document.getElementById('ID_IMAGE_STATS').innerHTML = 'Processing Image ...';
 
     // Don't want to block.  
     // Therefore run submission in background, not in main thread
-    setTimeout(backgroundSubmitOpForm, 500);
+    setTimeout(executeConversionInBackground, 500);
 }
 
 
@@ -163,7 +163,7 @@ function submitOpForm()
 // Execute the operation submission
 // This is called in the background via a timer from submitOpForm()
 // 
-function backgroundSubmitOpForm()
+function executeConversionInBackground()
 {
 
     // disable convertButton. display busy image 
@@ -686,7 +686,7 @@ function selectArg(argValue)
     var arg1 = document.getElementById('ARG1');
     arg1.value = argValue;
 
-    submitOpForm();
+    executeConversion();
 }
 
 
@@ -816,9 +816,6 @@ function saveRegionSelection()
 function chooseSecondaryImage() 
 {
     console.log('chooseSecondaryImage');
-    e = document.getElementById('FRAME1');
-    e = document.getElementById('SECONDARY_IMAGE');
-    console.log(e);
     e  = document.getElementById('SUBMITIMAGE');
     e.value=""; // CJM - MUST do this to avoid load caching!
     e.click();
@@ -833,11 +830,32 @@ function submitSecondaryImage()
 function completeSecondaryImageLoad(imageURL, text, width, height)
 {
     console.log('completeSecondaryImageLoad:', imageURL);
-    document.getElementById('SECONDARY_IMAGE').src = imageURL;
 
-    //DEV CJM
-    // have the AI analyze the image for regions of interest (ROI)
-    //executeImageAnalysis();
+    var imageArray = imageURL.split("/");
+	imagePath =  CONVERSIONS_PATH+imageArray[imageArray.length - 1];
+    document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
+    document.getElementById('ID_SECONDARY_IMAGE_PATH').value = imagePath;
+
+    var op = './ops/segmentx.php';
+    $.post(ENDPOINT_SEGMENT, 
+        {
+            CURRENTIMAGE: imagePath 
+        },
+        function(regions, status) 
+        {
+            var regionList = regions.split(',');
+            var regionAttributes = '';
+            var regionCount = 0;
+            for (i = 0; i < regionList.length; i++) {
+                var region = regionList[i];
+                if (region.includes('face')) {
+                    console.log('face seen', region);
+                    document.getElementById('ID_SECONDARY_REGION_PATH').value = region;
+                }
+
+            }
+        }
+    );
 }
 
 
