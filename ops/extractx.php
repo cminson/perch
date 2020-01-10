@@ -5,19 +5,17 @@ $LastOperation = 'Extract Image: ';
 $originalFilePath = $inputFilePath = GetCurrentImagePath();
 $outputFilePath = NewImagePath();
 
-$Region = $_POST['REGION'];
-if ($Region == 'ALL') {
+if ($SelectedRegion == 'ALL') {
     $outputFilePath = GetConversionPath($inputFilePath);
     NotifyUI('EXTRACT', $outputFilePath, $REGIONS_NONE);
     APPLOG('EXTRACT',$outputFilePath,FALSE);
     exit();
 }
-APPLOG($Region);
-if (stripos($Region, 'background') != FALSE)
+if (stripos($SelectedRegion, 'background') != FALSE)
 {
 
     APPLOG('Background SEEN');
-    $maskFilePath = GetConversionPath($Region);
+    $maskFilePath = GetConversionPath($SelectedRegion);
     $tmpFilePath1 = NewTMPImagePath();
     $script = "convert -transparent white $maskFilePath $tmpFilePath1";
     ExecScript($script);
@@ -38,7 +36,7 @@ if (stripos($Region, 'background') != FALSE)
 
 }
 
-$regionTerms = explode('.', $Region);
+$regionTerms = explode('.', $SelectedRegion);
 $termList = $regionTerms[3];
 $dims = explode('_', $termList);
 $x = intval($dims[0]);
@@ -49,7 +47,7 @@ $cropDim = $w."x$h+$x+$y";
 APPLOG("$cropDim $x $y $w $h");
 
 $outputFilePath = NewImagePath();
-$maskFilePath = GetConversionPath($Region);
+$maskFilePath = GetConversionPath($SelectedRegion);
 APPLOG("maskFilePath $maskFilePath");
 
 $cutterFilePath = NewTMPImagePath();

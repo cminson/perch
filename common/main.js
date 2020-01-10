@@ -21,6 +21,9 @@ var ListImageRegions = []; // the parallel list of regions for the image list
 var CurrentPosition = 0; // position of the current image being worked on
 var CurrentRegions = ''; // the regions associated with current image
 var SelectedRegion = 'ALL'; // the regions currently selected
+var CurrentSecondaryImage = ''; // the secondary image
+var CurrentSecondaryRegions = ''; // the regions associated with secondary image
+var SelectedSecondaryRegion = 'ALL'; // the secondary regions currently selected
 var CurrentOp = null; // the op we are currently viewing
 
 var BusyIcon = null;    // set to PATH_BUSY_ICON when system is busy
@@ -145,42 +148,6 @@ function submitFile()
 }
 
 
-//
-// Execute the conversion by submitting  the operation form.  This gets 
-// called when user clicks the Convert button
-//
-function executeConversion()
-{
-	document.getElementById('ID_IMAGE_STATS').innerHTML = 'Processing Image ...';
-
-    // Don't want to block.  
-    // Therefore run submission in background, not in main thread
-    setTimeout(executeConversionInBackground, 500);
-}
-
-
-//
-// Execute the operation submission
-// This is called in the background via a timer from submitOpForm()
-// 
-function executeConversionInBackground()
-{
-
-    // disable convertButton. display busy image 
-	disableConvertButton();
-	busyStateActivate();
-
-    // set current variable to the current image
-    // this is the image we will operate on
-    // this gets sent to php during the submit
-    var imagePath = getCurrentImagePath();
-	document.getElementById('current').value = imagePath;
-
-    // execute the POST
-    document.getElementById('ID_OP_SUBMITFORM').submit();
-}
-
-
 
 // 
 // Scroll the main area out
@@ -216,33 +183,137 @@ function returnToMainArea()
     document.getElementById('ID_MAIN_SLIDER').style.left = s;
 }
 
+
+function executeConversion()
+{
+	document.getElementById('ID_IMAGE_STATS').innerHTML = 'Processing Image ...';
+
+    // Don't want to block.  
+    // Therefore run submission in background, not in main thread
+    setTimeout(executeConversionInBackground, 500);
+}
+
+
+//
+// Execute the operation submission
+// This is called in the background via a timer from submitOpForm()
+// 
+function executeConversionInBackground()
+{
+
+    // disable convertButton. display busy image 
+	disableConvertButton();
+	busyStateActivate();
+
+    // set current variable to the current image
+    // this is the image we will operate on
+    // this gets sent to php during the submit
+    var currentImage = getCurrentImagePath();
+	document.getElementById('ID_CURRENT_IMAGE').value = currentImage;
+
+    // execute the POST
+    console.log('POSTING FORM: ', currentImage);
+    document.getElementById('ID_OP_SUBMITFORM').submit();
+}
+
+
+
+
+// CJM DEV
+function executeOp()
+{
+
+    var opx = CurrentOp.replace(".php", "x.php");
+    //var opx = "./ops/insertregionx.php";
+    console.log('executeOp', CurrentOp, opx);
+
+	disableConvertButton();
+	busyStateActivate();
+
+	var imagePath = getCurrentImagePath();
+	var homeImageURL = ListImageURLS[0];
+	var regions = ListImageRegions[CurrentPosition];
+
+    console.log("POST: ", imagePath, CurrentOp);
+    console.log("POST REGIONS: ", SelectedRegion, SelectedSecondaryRegion);
+    $.post(opx,
+    {
+        CURRENT_IMAGE: imagePath,
+        CURRENT_REGIONS: regions,
+        SELECTED_REGION: SelectedRegion,
+        CURRENT_SECONDARY_IMAGE: CurrentSecondaryImage,
+        CURRENT_SECONDARY_REGIONS: CurrentSecondaryRegions,
+        SELECTED_SECONDARY_REGION: SelectedSecondaryRegion,
+        ARG1: SelectedArg1
+    },
+    function(data, status)
+    {
+        console.log('executeOp', data.length, data, status);
+        result = data.split('###');
+
+        var imageURL = result[0];
+        var text = result[1];
+        var regions = result[0];
+
+        console.log(imageURL, text, regions);
+        //completeImageOp(imageURL, text, regions)
+	    enableConvertButton();
+
+        if (regions == REGIONS_PREVIOUS) regions = ListImageRegions[CurrentPosition]; 
+        else if (regions == REGIONS_NONE) regions = '';
+
+	    ListImageURLS.push(imageURL);
+	    ListImageStats.push(text);
+	    ListImageRegions.push(regions);
+	    CurrentPosition = ListImageURLS.length - 1;
+        CurrentRegions = regions;
+	    displayCurrentImage();
+
+        if (ListImageURLS.length > 1) 
+        {
+            show('ID_PREVIOUS_IMAGE');
+            show('ID_NEXT_IMAGE');
+        }
+
+	    busyStateDeactivate();
+
+    }
+    );
+}
+
 //
 // Update the op form with HTML required for that op
 //
 function displayOp(op)
 {
     console.log('displayOp');
+    console.log('REGIONS: ', CurrentSecondaryRegions, SelectedSecondaryRegion);
     CurrentOp = op; 
 
-	var imagePath = getCurrentImagePath();
+	var currentImage = getCurrentImagePath();
 	var homeImageURL = ListImageURLS[0];
-	var regions = ListImageRegions[CurrentPosition];
+	var currentRegions = ListImageRegions[CurrentPosition];
 
-    if (imagePath != null) 
+    if (currentImage != null) 
     {
-        console.log("POST: ", imagePath, op);
-        console.log("POST SELECTED REGION: ", SelectedRegion);
+        console.log("POST: ", currentImage, op);
+        console.log("POST REGIONS: ", SelectedRegion, SelectedSecondaryRegion);
         $.post(op, 
             {
-                CURRENTIMAGE: imagePath, 
-                CURRENTREGIONS: regions, 
-                SELECTEDREGION: SelectedRegion,
-                HOMEIMAGE: homeImageURL
+                CURRENT_IMAGE: currentImage,
+                CURRENT_REGIONS: currentRegions,
+                SELECTED_REGION: SelectedRegion,
+                CURRENT_SECONDARY_IMAGE: CurrentSecondaryImage,
+                CURRENT_SECONDARY_REGIONS: CurrentSecondaryRegions,
+                SELECTED_SECONDARY_REGION: SelectedSecondaryRegion,
+                HOME_IMAGE: homeImageURL
             },
             function(data, status) 
             {
+                console.log(data.length, status);
                 if (data.length > 10)
                 {
+                    console.log(data);
 			        document.getElementById('ID_OP_FORM').innerHTML = data;
 			        displayOpForm();
                     show('ID_RETURN_TO_MAINPAGE');
@@ -421,7 +492,7 @@ function executeImageAnalysis()
     var op = './ops/segmentx.php';
     $.post(ENDPOINT_SEGMENT, 
         {
-            CURRENTIMAGE: imagePath 
+            CURRENT_IMAGE: imagePath 
         },
         function(regions, status) 
         {
@@ -593,11 +664,17 @@ function getCurrentImageURL()
 
 function getCurrentImagePath()
 {
-	var imageURL = getCurrentImageURL();
+    var imageURL = getCurrentImageURL();
+	return(getPathFromURL(imageURL));
+}
+
+function getPathFromURL(imageURL)
+{
     if (imageURL == null) return null;
 
     var imageArray = imageURL.split("/");
 	return CONVERSIONS_PATH+imageArray[imageArray.length - 1];
+
 }
 
 
@@ -686,11 +763,10 @@ function toggleHelpPage()
 }
 
 
-function selectArg(argValue) 
+function executeWithArg(argValue) 
 {
-    var arg1 = document.getElementById('ARG1');
+    var arg1 = document.getElementById('ID_ARG1');
     arg1.value = argValue;
-
     executeConversion();
 }
 
@@ -809,10 +885,29 @@ function animateBusyDisplay()
 }
 
 
-function saveRegionSelection()
+//
+// Save off UI selected region state 
+// This is (used later so that user keeps her region selections when
+// moving between screens).
+//
+// This function is called via onChange in DisplayRegionPicker [common.inc]
+//
+function saveRegionSelections()
 {
-    var e = document.getElementById('ID_SELECT_REGION');
-    SelectedRegion = e.options[e.selectedIndex].value;
+    var e;
+
+    e  = document.getElementById('ID_SELECT_REGION');
+    if (e != null)
+    {
+        SelectedRegion = e.options[e.selectedIndex].value;
+    }
+    e  = document.getElementById('ID_SELECT_SECONDARY_REGION');
+    if (e != null)
+    {
+        SelectedSecondaryRegion = e.options[e.selectedIndex].value;
+    }
+
+
     console.log('getRegionSelection', SelectedRegion);
 
 }
@@ -837,6 +932,7 @@ function submitSecondaryImage()
 function completeSecondaryImageLoad(imageURL, text, width, height)
 {
     console.log('completeSecondaryImageLoad:', imageURL);
+    CurrentSecondaryImage = imageURL;
 
     var imageArray = imageURL.split("/");
 	imagePath =  CONVERSIONS_PATH+imageArray[imageArray.length - 1];
@@ -852,19 +948,58 @@ function completeSecondaryImageLoad(imageURL, text, width, height)
         },
         function(regions, status) 
         {
+            CurrentSecondaryRegions = regions;
+            console.log('Secondary Regions: ', CurrentSecondaryRegions);
+
             var regionList = regions.split(',');
             var regionAttributes = '';
             var regionCount = 0;
+
+            var regionCount = 0;
+            var regionSelector = document.getElementById('ID_SELECT_SECONDARY_REGION')
+            var el = document.createElement("option");
+            el.textContent = 'Entire Image';
+            el.value = 'ALL';
+            regionSelector.appendChild(el);
+
+
             for (i = 0; i < regionList.length; i++) {
                 var region = regionList[i];
-                if (region.includes('face')) {
-                    console.log('face seen', region);
-                    document.getElementById('ID_SECONDARY_REGION_PATH').value = region;
-                    document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
-                    document.getElementById('ID_SECONDARY_IMAGE_PATH').value = imagePath;
+                console.log(region);
+
+                var terms = region.split('.');
+                var regionName = terms[2];
+                console.log(region, terms[3]);
+                var regionDimensions = terms[3].split('_');
+                var x = regionDimensions[0];
+                var y = regionDimensions[1];
+                var width = regionDimensions[2];
+                var height = regionDimensions[3];
+
+                if (region.includes('background') == true)
+                {
+                    code = ' ';
+                }
+                else
+                {
+                    code = String.fromCharCode(regionCount+65)+')';
+                    regionCount += 1;
                 }
 
+                var regionAttribute = code+'  '+regionName+'  '+width+'x'+height;
+
+                var el = document.createElement("option");
+                el.textContent = regionAttribute;
+                el.value = region;
+                regionSelector.appendChild(el);
+
+                var imagePath = getPathFromURL(imageURL);
+
+                document.getElementById('ID_SECONDARY_REGION_PATH').value = region;
+                document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
+                document.getElementById('ID_SECONDARY_IMAGE_PATH').value = imagePath;
             }
+            var e = document.getElementById('ID_SELECT_SECONDARY_REGION');
         }
     );
 }

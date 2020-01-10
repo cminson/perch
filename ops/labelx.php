@@ -8,13 +8,13 @@ $pointSize = $_POST['FONTSIZE'];
 $font = $_POST['FONTS'];
 $label = $_POST['LABEL1'];
 $position = $_POST['POSITION'];
-$Region = $_POST['REGION'];
+$SelectedRegion = $_POST['SELECTED_REGION'];
 
 if (isset($font) == FALSE) $font = "Helvetica";
 if (isset($pointSize) == FALSE) $pointSize = 20;
 
 $originalFilePath = $inputFilePath = GetCurrentImagePath();
-$inputFilePath = ExtractRegionImage($inputFilePath, $Region);
+$inputFilePath = ExtractRegionImage($inputFilePath, $SelectedRegion);
 
 if ($position == 'Append')
 {
@@ -40,14 +40,14 @@ APPLOG("XLABEL FINAL $outputFilePath");
 
 $x = $ExtractedRegionOriginX;
 $y = $ExtractedRegionOriginY;
-if ($Region != 'ALL') 
+if ($SelectedRegion != 'ALL') 
 {
     $regionFilePath = $outputFilePath;
     $outputFilePath = NewImagePath();
     $script = "composite -geometry +$x+$y $regionFilePath $originalFilePath $outputFilePath";
     ExecScript($script);
     APPLOG($script);
-    $LastOperation .=  " $Region";
+    $LastOperation .=  " $SelectedRegion";
 }
 
 

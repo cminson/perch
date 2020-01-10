@@ -1,14 +1,11 @@
 <?php
 include '../common/common.inc';
 
-$Region = $_POST['REGION'];
-$Op = $_POST['OP'];
-
 $LastOperation = "Enhance";
 $inputFilePath = GetCurrentImagePath();
 $outputFilePath = NewImagePath();
 
-switch ($Op)
+switch ($SelectedOp)
 {
 case 'BLUR':
     //$script = "convert -modulate 100,130 -paint 2  $inputFilePath $outputFilePath";
@@ -86,7 +83,7 @@ ExecScript($script);
 APPLOG($script);
 
 APPLOG("Applying Region Operation").
-$maskFilePath = GetConversionPath($Region);
+$maskFilePath = GetConversionPath($SelectedRegion);
 $outputFilePath = ApplyRegionOperation($inputFilePath, $outputFilePath, $maskFilePath);
 
 NotifyUI("ENHANCE",$outputFilePath,$REGIONS_PREVIOUS);

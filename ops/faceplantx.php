@@ -12,7 +12,6 @@ $targetImagePath = GetCurrentImagePath();
 
 $Region = $_POST['REGION'];
 $targetRegionPath = GetConversionPath($Region);
-APPLOG("faceRegionPath $targetRegionPath");
 
 /*
 if (stristr($Region, 'FACE') == False)
@@ -24,41 +23,11 @@ if (stristr($Region, 'FACE') == False)
  */
 
 $sourceImagePath = GetConversionPath($_POST['ID_SECONDARY_IMAGE_PATH']);
-$faceRegionPath = GetConversionPath($_POST['ID_SECONDARY_REGION_PATH']);
+$sourceRegionPath = GetConversionPath($_POST['ID_SECONDARY_REGION_PATH']);
 
-APPLOG("TargetImage: $targetImagePath  TargetRegion: $targetRegionPath  SourceImage: $sourceImagePath  SourceRegion: $faceRegionPath");
+APPLOG("TargetImage: $targetImagePath  TargetRegion: $targetRegionPath  SourceImage: $sourceImagePath  SourceRegion: $sourceRegionPath");
 
-
-/*
- * Generate the images necessary to do a cv2 seamless comoposite
- *
- * 1) The source face, cropped out
- * 2) The mask this face, resized to the target face
- */
-
-
-/* prepare face mask */
-$cutterImagePath = NewTMPImagePath();
-$outputImagePath = NewImagePath();
-$script = "convert -transparent white -fuzz 40% $faceRegionPath $cutterImagePath";
-ExecScript($script);
-APPLOG("$script");
-
-/* overlay face mask on source image, getting only the face */
-$outputImagePath = NewTMPImagePath();
-$script = "composite -geometry +0+0 $cutterImagePath $sourceImagePath $outputImagePath";
-ExecScript($script);
-APPLOG("$script");
-
-/* make everything around the face transparent */
-$inputImagePath = $outputImagePath;
-$outputImagePath = NewImagePath();
-$script = "convert -fill white -opaque black $inputImagePath $outputImagePath";
-$script = "convert -transparent black $inputImagePath $outputImagePath";
-ExecScript($script);
-APPLOG("$script");
-
-$regionTerms = explode('.', $faceRegionPath);
+$regionTerms = explode('.', $sourceRegionPath);
 $termList = $regionTerms[3];
 $dims = explode('_', $termList);
 $x = intval($dims[0]);
@@ -67,16 +36,21 @@ $w = intval($dims[2]);
 $h = intval($dims[3]);
 $cropDim = $w."x$h+$x+$y";
 
-/* then crop the face out of the full image */
-$inputImagePath = $outputImagePath;
+/* crop the face out of the full image */
 $croppedImagePath = NewImagePath();
-$script = "convert -crop $cropDim +repage $inputImagePath $croppedImagePath";
+$script = "convert -crop $cropDim +repage $sourceImagePath $croppedImagePath";
 ExecScript($script);
 APPLOG("FINAL CROPPED FACE: $script");
 
-/* likewise crop out the mask for this face */
+if (stristr($Region, 'ALL') != False)
+{
+    NotifyUI('FACEPLANT', $croppedImagePath, $REGIONS_PREVIOUS);
+    exit();
+}
+
+/* crop out the mask for this face */
 $croppedMaskPath = NewImagePath();
-$script = "convert -crop $cropDim +repage $faceRegionPath $croppedMaskPath";
+$script = "convert -crop $cropDim +repage $sourceRegionPath $croppedMaskPath";
 ExecScript($script);
 APPLOG("CROPPED FACE MASK: $script");
 
@@ -92,27 +66,52 @@ $newDim = $w."x"."$h!";
 $centerX = intval($x + ($w / 2));
 $centerY = intval($y + ($h / 2));
 
-/* resize the mask  to the target face size*/
-$finalMaskPath = NewImagePath();
-$script = "convert $croppedMaskPath -resize $newDim $finalMaskPath";
-ExecScript($script);
-APPLOG("FINAL SOURCE MASK $script");
-
-/* resize the face size to the target face size */
+/* resize the face to target face size */
 $finalImagePath = NewImagePath();
 $script = "convert $croppedImagePath -resize $newDim $finalImagePath";
 ExecScript($script);
 APPLOG("FINAL FACE  $script");
 
-$outputImagePath = NewImagePath();
-$script = "composite -geometry +$x+$y $finalImagePath $targetImagePath $outputImagePath";
+/* resize the mask  to target face size*/
+$finalMaskPath = NewImagePath();
+$script = "convert $croppedMaskPath -resize $newDim $finalMaskPath";
 ExecScript($script);
-APPLOG("$script");
+APPLOG("FINAL SOURCE MASK $script");
 
 $outputImagePath = NewImagePath();
 $script = escapeshellcmd("python3 ./mlcomposite.py $finalImagePath $finalMaskPath $targetImagePath $outputImagePath $centerX $centerY");
 shell_exec($script);
 APPLOG("MLCOMPOSITE: $script");
+
+
+/* need to restore foreground? */
+if (stristr($Region, 'BACKGROUND') != False)
+{
+    APPLOG('BACKGROUND');
+    $compositeImagePath = $outputImagePath;
+
+    $cutterImagePath = NewTMPImagePath();
+    $script = "convert -transparent black -fuzz 40% $targetRegionPath $cutterImagePath";
+    ExecScript($script);
+    APPLOG("$script");
+
+    $outputImagePath = NewTMPImagePath();
+    $script = "composite -geometry +0+0 $cutterImagePath $targetImagePath $outputImagePath";
+    ExecScript($script);
+    APPLOG("$script");
+
+    $inputImagePath = $outputImagePath;
+    $outputImagePath = NewTMPImagePath();
+    $script = "convert -transparent white  $inputImagePath $outputImagePath";
+    ExecScript($script);
+    APPLOG("$script");
+
+    $inputImagePath = $outputImagePath;
+    $outputImagePath = NewTMPImagePath();
+    $script = "composite -geometry +0+0 $inputImagePath $compositeImagePath $outputImagePath";
+    ExecScript($script);
+    APPLOG("$script");
+}
 
 
 NotifyUI('FACEPLANT', $outputImagePath, $REGIONS_PREVIOUS);

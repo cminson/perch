@@ -51,19 +51,42 @@ $REGIONS_NONE = 'NONE';
 // ***************************************************************
 //
 //
+$HomeImage = '';
 
-$CurrentImage = $CurrentRegions = $HomeImage = '';
+$CurrentImage = '';
+$CurrentRegions = '';
 $SelectedRegion = 'ALL';
 
-if ((isset($_POST['CURRENTIMAGE'])) == TRUE) 
-    $CurrentImage = $_POST['CURRENTIMAGE'];
-if ((isset($_POST['CURRENTREGIONS'])) == TRUE) 
-    $CurrentRegions = trim($_POST['CURRENTREGIONS']);
-if ((isset($_POST['SELECTEDREGION'])) == TRUE) 
-    $SelectedRegion = trim($_POST['SELECTEDREGION']);
-if ((isset($_POST['HOMEIMAGE'])) == TRUE) 
-    $HomeImage = $_POST['HOMEIMAGE'];
-APPLOG("POST:  CurrentRegions: $CurrentRegions SelectedRegion: $SelectedRegion");
+$CurrentSecondaryImage = '';
+$CurrentSecondaryRegions = '';
+$SelectedSecondaryRegion = 'ALL';
+
+$SelectedArg1 = '';
+
+
+
+if ((isset($_POST['CURRENT_IMAGE'])) == TRUE) 
+    $CurrentImage = $_POST['CURRENT_IMAGE'];
+if ((isset($_POST['CURRENT_REGIONS'])) == TRUE) 
+    $CurrentRegions = trim($_POST['CURRENT_REGIONS']);
+if ((isset($_POST['SELECTED_REGION'])) == TRUE) 
+    $SelectedRegion = trim($_POST['SELECTED_REGION']);
+
+if ((isset($_POST['CURRENT_SECONDARY_IMAGE'])) == TRUE) 
+    $CurrentSecondaryImage = $_POST['CURRENT_SECONDARY_IMAGE'];
+if ((isset($_POST['CURRENT_SECONDARY_REGIONS'])) == TRUE) 
+    $CurrentSecondaryRegions = trim($_POST['CURRENT_SECONDARY_REGIONS']);
+if ((isset($_POST['SELECTED_SECONDARY_REGION'])) == TRUE) 
+    $SelectedSecondaryRegion = trim($_POST['SELECTED_SECONDARY_REGION']);
+
+if ((isset($_POST['SELECTED_OP'])) == TRUE) 
+    $SelectedOp = trim($_POST['SELECTED_OP']);
+if ((isset($_POST['ARG1'])) == TRUE) 
+    $SelectedArg1 = trim($_POST['ARG1']);
+
+$ARG2 = $_POST['ARG2'];
+
+APPLOG("POST:  SelectedRegion: $SelectedRegion ARG1: $SelectedArg1");
 
 $IMAGE_SUFFIX = '.png';
 $GIF_SUFFIX = '.gif';
@@ -145,7 +168,7 @@ function GetConversionPath($path)
 
 function GetCurrentImagePath() 
 {
-    return GetConversionPath($_POST['CURRENTIMAGE']);
+    return GetConversionPath($_POST['CURRENT_IMAGE']);
 }
 
 
@@ -164,10 +187,12 @@ function CompleteWithNoAction()
 function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePath)
 {
     global $LastOperation;
-    global $Region;
+    global $SelectedRegion;
 
-    if ($Region == 'ALL')
+    APPLOG("SelectedRegion: $SelectedRegion");
+    if ($SelectedRegion == 'ALL')
     {
+        APPLOG("SelectedRegion ALL");
         $LastOperation .=  "  Entire Image";
         return $convertedFilePath;
     }
@@ -199,7 +224,7 @@ function ApplyRegionOperation($originalFilePath, $convertedFilePath, $maskFilePa
     APPLOG($script);
 
     APPLOG("APPLY FINAL $resultFilePath");
-    $regionName = explode('.', $Region)[2];
+    $regionName = explode('.', $SelectedRegion)[2];
     $LastOperation .=  "  $regionName";
 
     return $resultFilePath;
@@ -357,6 +382,7 @@ function GetImageRegions($imagePath, $filter)
 }
 
 
+
 function DisplayRegionPicker()
 {
     global $CurrentRegions;
@@ -368,7 +394,7 @@ function DisplayRegionPicker()
 
 	print('Target Region:&nbsp;');
 	DisplaySep0();
-	print  "<select onchange=\"saveRegionSelection()\" id=\"ID_SELECT_REGION\" name=\"REGION\">\n";
+	print  "<select onchange=\"saveRegionSelections()\" id=\"ID_SELECTED_REGION\" name=\"SELECTED_REGION\">\n";
 
     if ($SelectedRegion == "ALL")
 	    print  "<option value=\"ALL\" selected>Entire Image\n";
@@ -406,6 +432,60 @@ function DisplayRegionPicker()
     }
 	print  "</select>\n";
 }
+
+function DisplaySecondaryRegionPicker()
+{
+global $CurrentSecondaryRegions;
+global $SelectedSecondaryRegion;
+
+    APPLOG("DisplayRegionPicker: $CurrentSecondaryRegions");
+
+
+	print('Source Region:&nbsp;');
+	DisplaySep0();
+	print  "<select onchange=\"saveRegionSelections()\" id=\"ID_SELECT_SECONDARY_REGION\" name=\"REGION\">\n";
+    if (strlen($CurrentSecondaryRegions) < 2) return;
+
+    if ($SelectedSecondaryRegion == "ALL")
+	    print  "<option value=\"ALL\" selected>Entire Image\n";
+    else
+	    print  "<option value=\"ALL\">Entire Image\n";
+
+    $regionCount = 0;
+    $regionList = explode(',', $CurrentSecondaryRegions);
+    foreach ($regionList as $regionFile)
+    {
+        APPLOG($regionFile);
+        $terms = explode('.', $regionFile);
+        $regionName = $terms[2];
+        $regionDimensions = explode('_', $terms[3]);
+        $x = $regionDimensions[0];
+        $y = $regionDimensions[1];
+        $width = $regionDimensions[2];
+        $height = $regionDimensions[3];
+
+        if (strpos($regionFile, 'background') == true) 
+        {
+            $code = ' ';
+        }
+        else 
+        {
+            $code = chr($regionCount+65).')';
+            $regionCount += 1;
+        }
+
+        $regionAttribute = $code.'  '.$regionName.'  '.$width.'x'.$height;
+
+        if ($SelectedSecondaryRegion == $regionFile)
+	        print  "<option value=\"$regionFile\" selected>$regionAttribute\n";
+        else
+	        print  "<option value=\"$regionFile\">$regionAttribute\n";
+    }
+	print  "</select>\n";
+}
+
+
+
 
 
 function PrintSaveImageString()
@@ -480,7 +560,9 @@ global $LastOperation;
 
     if ($regions == null) $regions = '0';
 
-	APPLOG("$outputFilePath $stats $regions");
+	#APPLOG("$outputFileURL###$stats###$regions");
+    #echo "$outputFileURL###$stats###$regions";
+
 	echo '<html><head><title>-</title></head><body>';
 	echo '<script language="JavaScript" type="text/javascript">'."\n";
 	echo "parent.completeImageOp(\"$outputFileURL\",\"$stats\",\"$regions\");";
@@ -771,23 +853,25 @@ function DisplayLineSep1()
 
 function DisplayFormStart()
 {
-    global $PATH_OPS, $CurrentImage, $HomeImage;
+    global $PATH_OPS, $CurrentImage; 
+    global $CurrentRegions, $SelectedRegion;
 
 	$op = $_SERVER['PHP_SELF'];
 	$op = basename($op);
 	$op = str_replace(".php","x.php",$op);
 	$op = "$PATH_OPS$op";
+    APPLOG("DisplayFormStart $op");
 
 	print "\n";
 	print "<center>\n";
     print  "<form id=\"ID_OP_SUBMITFORM\" enctype=\"multipart/form-data\" action=\"$op\" method=\"post\" target=\"upload_target\">\n";
 
-	print  "<input type=\"hidden\" id=\"current\" name=\"CURRENTIMAGE\" value=\"$CurrentImage\">\n";
-	print  "<input type=\"hidden\" id=\"home\" name=\"HOMEIMAGE\" value=\"$HomeImage\">\n";
-	print  "<input type=\"hidden\" id=\"ARG1\" name = \"ARG1\" value=\"NA\">\n";
-	print  "<input type=\"hidden\" id=\"ARG2\" value=\"NA\">\n";
+	print  "<input type=\"hidden\" name=\"CURRENT_IMAGE\" id=\"ID_CURRENT_IMAGE\" value=\"$CurrentImage\">\n";
+	print  "<input type=\"hidden\" name=\"CURRENT_REGIONS\" id=\"ID_CURRENT_REGIONS\" value=\"$CurrentRegions\">\n";
+	print  "<input type=\"hidden\" name=\"SELECTED_REGION\" id=\"ID_SELECTED_REGION\" value=\"$SelectedRegion\">\n";
+	print  "<input type=\"hidden\" name=\"ARG1\" id=\"ID_ARG1\" value=\"NA\">\n";
+	print  "<input type=\"hidden\" name=\"ARG2\" id=\"ID_ARG2\" value=\"NA\">\n";
 
-	APPLOG("DISPLAY FORMSTART CURRENT=$CurrentImage");
 	print "\n";
 }
 
@@ -1175,7 +1259,7 @@ function DisplayOpPicker($labels, $values, $default)
 {
 	print "Operation:&nbsp;";
 	DisplaySep0();
-	print "<select name=\"OP\" id=\"OP\">\n";
+	print "<select name=\"SELECTED_OP\" id=\"ID_SELECTED_OP\">\n";
 	$i = 0;
 	foreach ($values as $v)
 	{

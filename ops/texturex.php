@@ -4,16 +4,13 @@ APPLOG('TEXTURE');
 
 $LastOperation = 'Textured';
 
-$Region = $_POST['REGION'];
-$Op = $_POST['OP'];
-
 $originalFilePath = $inputFilePath = GetCurrentImagePath();
-$textureImagePath = "$PATH_TEXTURES$Op$GIF_SUFFIX";
+$textureImagePath = "$PATH_TEXTURES$SelectedOp$GIF_SUFFIX";
 $outputFilePath = NewImagePath();
 
-APPLOG($Op);
+APPLOG($SelectedOp);
 
-switch ($Op)
+switch ($SelectedOp)
 {
 case 'CURVES':
     $Description = 'Curves';
@@ -153,10 +150,10 @@ $LastOperation = "$LastOperation $Description: ";
 
 
 APPLOG("Applying Region Operation").
-$maskFilePath = GetConversionPath($Region);
+$maskFilePath = GetConversionPath($SelectedRegion);
 $outputFilePath = ApplyRegionOperation($originalFilePath, $outputFilePath, $maskFilePath);
 
 APPLOG("FINAL $outputFilePath");
-InformUILayer("TEXTURE",$outputFilePath,$REGIONS_PREVIOUS);
+NotifyUI("TEXTURE",$outputFilePath,$REGIONS_PREVIOUS);
 
 ?>
