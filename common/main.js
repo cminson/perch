@@ -460,7 +460,6 @@ function displayRegions()
     var aspectY = (canvas.height / CurrentImageHeight).toFixed(2);
     /*
     console.log('CANVAS w h', canvas.width, canvas.height);
-    console.log('CURRENTIMAGE w h', CurrentImageWidth, CurrentImageHeight);
     console.log('ASPECTS X Y', aspectX, aspectY);
     */
 
@@ -536,7 +535,6 @@ function viewCurrentImage()
     if (imagePath != null) 
     {
 	    document.getElementById('ID_VIEW_IMAGE').href = BASE_URL+"/displayimage.html?CURRENTIMAGE="+imagePath;
-        //console.log(BASE_URL+"/displayimage.html?CURRENTIMAGE="+imagePath);
     }
 }
 
@@ -835,14 +833,15 @@ function saveRegionSelection()
 {
     var e;
 
-    e  = document.getElementById('ID_SELECTED_REGION');
-    if (e != null)
+    e = document.getElementById('ID_SELECTED_REGION');
+    if (e != null  && e.options.length > 0)
     {
         SelectedRegion = e.options[e.selectedIndex].value;
         console.log('Saving Selected Region', SelectedRegion);
     }
-    e  = document.getElementById('ID_SELECTED_SECONDARY_REGION');
-    if (e != null)
+    e = document.getElementById('ID_SELECTED_SECONDARY_REGION');
+    console.log(e);
+    if (e != null && e.options.length > 0)
     {
         SelectedSecondaryRegion = e.options[e.selectedIndex].value;
         console.log('Saving Selected Secondary Region', SelectedSecondaryRegion);
@@ -911,15 +910,12 @@ function completeSecondaryImageLoad(imageURL, text, width, height)
 
     var imageArray = imageURL.split("/");
 	imagePath =  CONVERSIONS_PATH+imageArray[imageArray.length - 1];
-    /*
-    document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
-    document.getElementById('ID_SECONDARY_IMAGE_PATH').value = imagePath;
-    */
 
+    // Now execute segment analysis
     var op = './ops/segmentx.php';
     $.post(ENDPOINT_SEGMENT, 
         {
-            CURRENTIMAGE: imagePath 
+            CURRENT_IMAGE: imagePath 
         },
         function(regions, status) 
         {
@@ -931,7 +927,7 @@ function completeSecondaryImageLoad(imageURL, text, width, height)
             var regionCount = 0;
 
             var regionCount = 0;
-            var regionSelector = document.getElementById('ID_SELECT_SECONDARY_REGION')
+            var regionSelector = document.getElementById('ID_SELECTED_SECONDARY_REGION')
             var el = document.createElement("option");
             el.textContent = 'Entire Image';
             el.value = 'ALL';
@@ -970,11 +966,12 @@ function completeSecondaryImageLoad(imageURL, text, width, height)
 
                 var imagePath = getPathFromURL(imageURL);
 
-                document.getElementById('ID_SECONDARY_REGION_PATH').value = region;
                 document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
+                document.getElementById('ID_SECONDARY_REGION_PATH').value = region;
                 document.getElementById('ID_SECONDARY_IMAGE_PATH').value = imagePath;
             }
             var e = document.getElementById('ID_SELECT_SECONDARY_REGION');
+            document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
         }
     );
 }

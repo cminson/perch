@@ -71,7 +71,7 @@ $outputFileURL = GetConversionURL($outputFilePath);
 
 // inform javascript caller that the image is loaded and ready for display
 $stats = "Image Loaded";
-APPLOG("LOADX SUCCESS $outputFilePath");
+APPLOG("LOADX SUCCESS $outputFileURL $outputFilePath");
 echo '<html><head><title>-</title></head><body>';
 echo '<script language="JavaScript" type="text/javascript">'."\n";
 echo "parent.completeSecondaryImageLoad(\"$outputFileURL\",\"$stats\",\"$width\", \"$height\");";
