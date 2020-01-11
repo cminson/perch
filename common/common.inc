@@ -69,6 +69,10 @@ $SelectedArg1 = '';
 $SelectedOp = '';
 $SelectedSetting = 1;
 
+$SecondaryImage = '';
+if ((isset($_POST['SECONDARY_IMAGE'])) == TRUE) 
+    $SecondaryImage = $_POST['SECONDARY_IMAGE'];
+
 
 if ((isset($_POST['CURRENT_IMAGE'])) == TRUE) 
     $CurrentImage = $_POST['CURRENT_IMAGE'];
@@ -94,6 +98,7 @@ if ((isset($_POST['ARG1'])) == TRUE)
 
 $ARG2 = $_POST['ARG2'];
 
+APPLOG("TEST:  SecondaryImage: $SecondaryImage ");
 APPLOG("POST:  SelectedRegion: $SelectedRegion ARG1: $SelectedArg1");
 
 $IMAGE_SUFFIX = '.png';
@@ -1317,9 +1322,9 @@ function DisplayGenStringPicker($text,$id,$values,$strings,$default)
 }
 
 
-function DisplayHiddenField($id)
+function DisplayHiddenField($id, $name)
 {
-	print  "<input type=\"hidden\" name=\"$id\" id=\"$id\" value=\"\">";
+	print  "<input type=\"hidden\" id=\"$id\" name=\"$name\" value=\"\">";
 }
 
 

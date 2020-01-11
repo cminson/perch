@@ -6,9 +6,12 @@
 include './common/common.inc';
 
 $current = $_GET['CURRENTIMAGE'];
+$current = rawurldecode($current);
 APPLOG("DISPLAYIMAGE: $current");
 
-$current = rawurldecode($current);
+$terms = explode('/', $current);
+$current = "/CONVERSIONS/".end($terms);
+
 $href = "$BASE_URL$current";
 print "<meta http-equiv=\"refresh\" content=\"1;url=$href\">\n";
 ?>

@@ -10,7 +10,7 @@
 // URL and directory roots
 //
 const BASE_URL = "http://54.71.108.91";   // root. also set in common.inc
-const CONVERSIONS_PATH = "/CONVERSIONS/"; // where images are stored
+const CONVERSIONS_PATH = "/var/www/perch/CONVERSIONS/"; // where images are stored
 
 // 
 // Our current session state
@@ -218,6 +218,17 @@ function executeConversionInBackground()
     var currentImage = getCurrentImagePath();
 	document.getElementById('ID_CURRENT_IMAGE').value = currentImage;
 
+    var e = document.getElementById('ID_SECONDARY_IMAGE');
+    if (e != null)
+    {
+        var imageURL = e.src;
+        var imagePath = getPathFromURL(imageURL);
+
+        e = document.getElementById('ID_CURRENT_SECONDARY_IMAGE');
+        e.value = imagePath;
+        console.log('submitSecondaryImage', imageURL, imagePath);
+    }
+
     // execute the POST
     console.log('POSTING FORM: ', currentImage);
     document.getElementById('ID_OP_SUBMITFORM').submit();
@@ -380,8 +391,8 @@ function completeImageAnalysis(imagePath, regions)
 
 
 //
-// Invoked once a conversion has been executed on an image.
-// This function is executed by InformUI() in common.inc.
+// Update UI  once a conversion has been executed on an image.
+// This function is executed by NotifyUI() in common.inc.
 //
 // Re-enable convert button
 // Determine what regions are associated with this converted image
@@ -847,7 +858,6 @@ function saveRegionSelection()
         console.log('Saving Selected Secondary Region', SelectedSecondaryRegion);
     }
 
-    console.log('getRegionSelection', SelectedRegion);
 }
 
 //
@@ -894,11 +904,18 @@ function chooseSecondaryImage()
 }
 
 
+
+
 function submitSecondaryImage() 
 {
-    console.log('submitSecondaryImage');
     //CJM DEV - this is where busy image goes
-    //document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
+    /*
+    var imageURL = document.getElementById('ID_SECONDARY_IMAGE').src;
+    var imagePath = getPathFromURL(imageURL);
+    document.getElementById('ID_CURRENT_SECONDARY_IMAGE').value = imagePath;
+    console.log('submitSecondaryImage', imageURL, imagePath);
+    */
+
     document.getElementById('ID_LOAD_SECONDARY_IMAGE').submit();
 }
 
@@ -906,10 +923,10 @@ function submitSecondaryImage()
 function completeSecondaryImageLoad(imageURL, text, width, height)
 {
     console.log('completeSecondaryImageLoad:', imageURL);
-    CurrentSecondaryImage = imageURL;
 
     var imageArray = imageURL.split("/");
 	imagePath =  CONVERSIONS_PATH+imageArray[imageArray.length - 1];
+    CurrentSecondaryImage = imagePath;
 
     // Now execute segment analysis
     var op = './ops/segmentx.php';
@@ -966,11 +983,7 @@ function completeSecondaryImageLoad(imageURL, text, width, height)
 
                 var imagePath = getPathFromURL(imageURL);
 
-                document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
-                document.getElementById('ID_SECONDARY_REGION_PATH').value = region;
-                document.getElementById('ID_SECONDARY_IMAGE_PATH').value = imagePath;
             }
-            var e = document.getElementById('ID_SELECT_SECONDARY_REGION');
             document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
         }
     );
