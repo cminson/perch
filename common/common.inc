@@ -413,6 +413,8 @@ function DisplayRegionPicker()
     foreach ($regionList as $regionFile)
     {
         APPLOG($regionFile);
+        if (strlen($regionFile) < 2) continue;
+
         $terms = explode('.', $regionFile);
         $regionName = $terms[2];
         $regionDimensions = explode('_', $terms[3]);
