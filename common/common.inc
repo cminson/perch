@@ -42,6 +42,10 @@ $IMAGE_MAX_NUMBER = 9999999;
 $ExtractedRegionOriginX = 0;
 $ExtractedRegionOriginY = 0;
 
+//
+// Which regions to use after for an image just generated via an operation
+// cross-defined in main.js
+//
 $REGIONS_PREVIOUS = 'PREVIOUS';
 $REGIONS_NONE = 'NONE';
 
@@ -62,7 +66,8 @@ $CurrentSecondaryRegions = '';
 $SelectedSecondaryRegion = 'ALL';
 
 $SelectedArg1 = '';
-
+$SelectedOp = '';
+$SelectedSetting = 1;
 
 
 if ((isset($_POST['CURRENT_IMAGE'])) == TRUE) 
@@ -81,6 +86,9 @@ if ((isset($_POST['SELECTED_SECONDARY_REGION'])) == TRUE)
 
 if ((isset($_POST['SELECTED_OP'])) == TRUE) 
     $SelectedOp = trim($_POST['SELECTED_OP']);
+if ((isset($_POST['SELECTED_SETTING'])) == TRUE) 
+    $SelectedSetting = trim($_POST['SELECTED_SETTING']);
+
 if ((isset($_POST['ARG1'])) == TRUE) 
     $SelectedArg1 = trim($_POST['ARG1']);
 
@@ -394,7 +402,7 @@ function DisplayRegionPicker()
 
 	print('Target Region:&nbsp;');
 	DisplaySep0();
-	print  "<select onchange=\"saveRegionSelections()\" id=\"ID_SELECTED_REGION\" name=\"SELECTED_REGION\">\n";
+	print  "<select onchange=\"saveRegionSelection()\" id=\"ID_SELECTED_REGION\" name=\"SELECTED_REGION\">\n";
 
     if ($SelectedRegion == "ALL")
 	    print  "<option value=\"ALL\" selected>Entire Image\n";
@@ -443,7 +451,7 @@ global $SelectedSecondaryRegion;
 
 	print('Source Region:&nbsp;');
 	DisplaySep0();
-	print  "<select onchange=\"saveRegionSelections()\" id=\"ID_SELECT_SECONDARY_REGION\" name=\"REGION\">\n";
+	print  "<select onchange=\"saveRegionSelection()\" id=\"ID_SELECTED_SECONDARY_REGION\" name=\"SELECTED_SECONDARY_REGION\">\n";
     if (strlen($CurrentSecondaryRegions) < 2) return;
 
     if ($SelectedSecondaryRegion == "ALL")
@@ -788,15 +796,17 @@ function DisplayColorPicker($text,$setting,$name,$default)
 }
 
 
-function DisplayNumPicker($text,$setting,$min,$max,$selected)
+function DisplayNumPicker($text,$setting,$min,$max)
 {
+    global $SelectedSetting;
+
 	print  "$text\n";
 	DisplaySep0();
 	print  "<select name=\"$setting\">\n";
 	$i = $min;
 	while ($i <= $max)
 	{
-		if ($i == $selected)
+		if ($i == $SelectedSetting)
 			print  "<option value=\"$i\" selected>$i\n";
 		else
 			print  "<option value=\"$i\">$i\n";
@@ -868,7 +878,6 @@ function DisplayFormStart()
 
 	print  "<input type=\"hidden\" name=\"CURRENT_IMAGE\" id=\"ID_CURRENT_IMAGE\" value=\"$CurrentImage\">\n";
 	print  "<input type=\"hidden\" name=\"CURRENT_REGIONS\" id=\"ID_CURRENT_REGIONS\" value=\"$CurrentRegions\">\n";
-	print  "<input type=\"hidden\" name=\"SELECTED_REGION\" id=\"ID_SELECTED_REGION\" value=\"$SelectedRegion\">\n";
 	print  "<input type=\"hidden\" name=\"ARG1\" id=\"ID_ARG1\" value=\"NA\">\n";
 	print  "<input type=\"hidden\" name=\"ARG2\" id=\"ID_ARG2\" value=\"NA\">\n";
 
@@ -1241,30 +1250,19 @@ function NewDisplayRegionPicker($regions, $args)
 
 
 
-
-function TestDisplaySelectionPicker($labels, $args)
+function DisplayOpPicker($labels, $values)
 {
-    for ($i = 0; $i < count($labels); $i++)
-    {
-        $label = $labels[$i];
-        $arg = $args[$i];
+    global $SelectedOp;
 
-        print "<button class=\"argHandler\" onclick=\"selectArg('$arg')\">$label</button>\n";
-
-    }
-}
-
-
-function DisplayOpPicker($labels, $values, $default)
-{
+    APPLOG("DisplayOpPicker: $SelectedOp");
 	print "Operation:&nbsp;";
 	DisplaySep0();
-	print "<select name=\"SELECTED_OP\" id=\"ID_SELECTED_OP\">\n";
+	print "<select onchange=\"saveOpSelection()\" id=\"ID_SELECTED_OP\" name=\"SELECTED_OP\">\n";
 	$i = 0;
 	foreach ($values as $v)
 	{
 		$s = $labels[$i];
-		if ($default == $i)
+		if ($SelectedOp == $v)
 			print("<option value=\"$v\" selected>$s\n");
 		else
 			print("<option value=\"$v\">$s\n");
@@ -1274,15 +1272,18 @@ function DisplayOpPicker($labels, $values, $default)
 }
 
 
-function DisplaySettingPicker($min,$max,$selected)
+function DisplaySettingPicker($min,$max)
 {
+    global $SelectedSetting;
+
 	print('Setting:&nbsp');
 	DisplaySep0();
-	print  "<select name=\"SETTING\">\n";
+	print  "<select onchange=\"saveSettingSelection()\" id=\"ID_SELECTED_SETTING\" name=\"SELECTED_SETTING\">\n";
 	$i = $min;
+    APPLOG("DisplaySettingPicker $SelectedSetting");
 	while ($i <= $max)
 	{
-		if ($i == $selected)
+		if ($i == $SelectedSetting)
 			print  "<option value=\"$i\" selected>$i\n";
 		else
 			print  "<option value=\"$i\">$i\n";

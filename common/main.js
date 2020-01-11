@@ -24,7 +24,9 @@ var SelectedRegion = 'ALL'; // the regions currently selected
 var CurrentSecondaryImage = ''; // the secondary image
 var CurrentSecondaryRegions = ''; // the regions associated with secondary image
 var SelectedSecondaryRegion = 'ALL'; // the secondary regions currently selected
-var CurrentOp = null; // the op we are currently viewing
+var CurrentOpForm = null; // the operation form we are currently viewing, if anuy
+var SelectedOp = null; // currently selected operation, if any
+var SelectedSetting = null; // currently selected generic setting, if any
 
 var BusyIcon = null;    // set to PATH_BUSY_ICON when system is busy
 const PATH_BUSY_ICON = './resources/utils/busy2.gif'; 
@@ -46,6 +48,12 @@ var CurrentImageHeight = 1;
 //
 ENDPOINT_SEGMENT = './ops/segmentx.php';
 
+//
+// Which regions to use after for an image just generated via an operation
+// cross-defined in common.inc
+//
+const REGIONS_PREVIOUS = 'PREVIOUS';
+const REGIONS_NONE = 'NONE';
 
 //
 // Constants and variables used by the Busy Indicstor
@@ -113,9 +121,8 @@ function drawInitialCanvas()
     ctx.font = 'normal 15px Tahoma';
     ctx.fillStyle = "#000000";
     //ctx.fillText(BANNER_HELP1, x, y);
-
-
 }
+
 
 //
 // Executed by the Load Image button.
@@ -175,7 +182,7 @@ function returnToMainArea()
 {
     var e;
 
-    CurrentOp = null;
+    CurrentOpForm = null;
 
     hide('ID_RETURN_TO_MAINPAGE');
 	var scroll = 0;
@@ -218,69 +225,6 @@ function executeConversionInBackground()
 
 
 
-
-// CJM DEV
-function executeOp()
-{
-
-    var opx = CurrentOp.replace(".php", "x.php");
-    //var opx = "./ops/insertregionx.php";
-    console.log('executeOp', CurrentOp, opx);
-
-	disableConvertButton();
-	busyStateActivate();
-
-	var imagePath = getCurrentImagePath();
-	var homeImageURL = ListImageURLS[0];
-	var regions = ListImageRegions[CurrentPosition];
-
-    console.log("POST: ", imagePath, CurrentOp);
-    console.log("POST REGIONS: ", SelectedRegion, SelectedSecondaryRegion);
-    $.post(opx,
-    {
-        CURRENT_IMAGE: imagePath,
-        CURRENT_REGIONS: regions,
-        SELECTED_REGION: SelectedRegion,
-        CURRENT_SECONDARY_IMAGE: CurrentSecondaryImage,
-        CURRENT_SECONDARY_REGIONS: CurrentSecondaryRegions,
-        SELECTED_SECONDARY_REGION: SelectedSecondaryRegion,
-        ARG1: SelectedArg1
-    },
-    function(data, status)
-    {
-        console.log('executeOp', data.length, data, status);
-        result = data.split('###');
-
-        var imageURL = result[0];
-        var text = result[1];
-        var regions = result[0];
-
-        console.log(imageURL, text, regions);
-        //completeImageOp(imageURL, text, regions)
-	    enableConvertButton();
-
-        if (regions == REGIONS_PREVIOUS) regions = ListImageRegions[CurrentPosition]; 
-        else if (regions == REGIONS_NONE) regions = '';
-
-	    ListImageURLS.push(imageURL);
-	    ListImageStats.push(text);
-	    ListImageRegions.push(regions);
-	    CurrentPosition = ListImageURLS.length - 1;
-        CurrentRegions = regions;
-	    displayCurrentImage();
-
-        if (ListImageURLS.length > 1) 
-        {
-            show('ID_PREVIOUS_IMAGE');
-            show('ID_NEXT_IMAGE');
-        }
-
-	    busyStateDeactivate();
-
-    }
-    );
-}
-
 //
 // Update the op form with HTML required for that op
 //
@@ -288,7 +232,7 @@ function displayOp(op)
 {
     console.log('displayOp');
     console.log('REGIONS: ', CurrentSecondaryRegions, SelectedSecondaryRegion);
-    CurrentOp = op; 
+    CurrentOpForm = op; 
 
 	var currentImage = getCurrentImagePath();
 	var homeImageURL = ListImageURLS[0];
@@ -297,12 +241,14 @@ function displayOp(op)
     if (currentImage != null) 
     {
         console.log("POST: ", currentImage, op);
-        console.log("POST REGIONS: ", SelectedRegion, SelectedSecondaryRegion);
+        console.log("POST REGIONS: ", SelectedSetting, SelectedRegion, SelectedSecondaryRegion);
         $.post(op, 
             {
                 CURRENT_IMAGE: currentImage,
                 CURRENT_REGIONS: currentRegions,
                 SELECTED_REGION: SelectedRegion,
+                SELECTED_OP: SelectedOp,
+                SELECTED_SETTING: SelectedSetting,
                 CURRENT_SECONDARY_IMAGE: CurrentSecondaryImage,
                 CURRENT_SECONDARY_REGIONS: CurrentSecondaryRegions,
                 SELECTED_SECONDARY_REGION: SelectedSecondaryRegion,
@@ -313,13 +259,11 @@ function displayOp(op)
                 console.log(data.length, status);
                 if (data.length > 10)
                 {
-                    console.log(data);
 			        document.getElementById('ID_OP_FORM').innerHTML = data;
-			        displayOpForm();
+			        displayOpForm()
                     show('ID_RETURN_TO_MAINPAGE');
                 }
             }
-        
         );
     }
 }
@@ -381,10 +325,10 @@ function completeImageLoad(imageURL, text, width, height)
     hide('ID_PREVIOUS_IMAGE');
     hide('ID_NEXT_IMAGE');
 
-    //DEV CJM
     // have the AI analyze the image for regions of interest (ROI)
     executeImageAnalysis();
 }
+
 
 //
 // Invoked once the image has been ROI analyzed
@@ -431,14 +375,9 @@ function completeImageAnalysis(imagePath, regions)
     console.log('Setting STAT: ', regionAttributes);
 	document.getElementById('ID_IMAGE_STATS').innerHTML = regionAttributes;
     ListImageStats[CurrentPosition] = regionAttributes;
-    if (CurrentOp != null) displayOp(CurrentOp);
+    if (CurrentOpForm != null) displayOp(CurrentOpForm);
 }
 
-//
-// cross-defined in common.inc
-//
-const REGIONS_PREVIOUS = 'PREVIOUS';
-const REGIONS_NONE = 'NONE';
 
 //
 // Invoked once a conversion has been executed on an image.
@@ -512,7 +451,7 @@ function displayRegions()
 
     regions = ListImageRegions[CurrentPosition];
 
-    console.log('displayRegions: ', regions);
+    //console.log('displayRegions: ', regions);
     var canvas  = document.getElementById('ID_CANVAS');
     var ctx = canvas.getContext("2d");
 
@@ -580,7 +519,7 @@ function displayRegions()
         ctx.font = 'normal 20px Arial';
         ctx.fillStyle = color;
         ctx.fillText(codeCharacter, x, y);
-        console.log('Drawing region: code x y w h ', codeCharacter, x, y, width, height);
+        //console.log('Drawing region: code x y w h ', codeCharacter, x, y, width, height);
         regionCount += 1;
     }
 }
@@ -892,25 +831,59 @@ function animateBusyDisplay()
 //
 // This function is called via onChange in DisplayRegionPicker [common.inc]
 //
-function saveRegionSelections()
+function saveRegionSelection()
 {
     var e;
 
-    e  = document.getElementById('ID_SELECT_REGION');
+    e  = document.getElementById('ID_SELECTED_REGION');
     if (e != null)
     {
         SelectedRegion = e.options[e.selectedIndex].value;
+        console.log('Saving Selected Region', SelectedRegion);
     }
-    e  = document.getElementById('ID_SELECT_SECONDARY_REGION');
+    e  = document.getElementById('ID_SELECTED_SECONDARY_REGION');
     if (e != null)
     {
         SelectedSecondaryRegion = e.options[e.selectedIndex].value;
+        console.log('Saving Selected Secondary Region', SelectedSecondaryRegion);
     }
 
-
     console.log('getRegionSelection', SelectedRegion);
-
 }
+
+//
+// Save off UI selected operation state
+// This is (used later so that user keeps her op selections when
+// moving between screens).
+//
+// This function is called via onChange in DisplayOpPicker [common.inc]
+//
+function saveOpSelection()
+{
+    var e;
+
+    e  = document.getElementById('ID_SELECTED_OP');
+    if (e != null)
+    {
+        SelectedOp = e.options[e.selectedIndex].value;
+        console.log('Saving Selected Op', SelectedOp);
+    }
+    console.log('saveOpSelection', SelectedOp);
+}
+
+
+function saveSettingSelection()
+{
+    var e;
+
+    e  = document.getElementById('ID_SELECTED_SETTING');
+    if (e != null)
+    {
+        SelectedSetting = e.options[e.selectedIndex].value;
+        console.log('Saving Selected Setting', SelectedOp);
+    }
+}
+
 
 
 function chooseSecondaryImage() 
@@ -921,6 +894,7 @@ function chooseSecondaryImage()
     e.click();
 }
 
+
 function submitSecondaryImage() 
 {
     console.log('submitSecondaryImage');
@@ -928,6 +902,7 @@ function submitSecondaryImage()
     //document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;
     document.getElementById('ID_LOAD_SECONDARY_IMAGE').submit();
 }
+
 
 function completeSecondaryImageLoad(imageURL, text, width, height)
 {

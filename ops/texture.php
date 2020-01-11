@@ -10,7 +10,7 @@ DisplayTitle('Texture Image');
 DisplayFormStart();
 DisplayRegionPicker();
 DisplayLineSep1();
-DisplayOpPicker($LABELS, $VALUES, 0);
+DisplayOpPicker($LABELS, $VALUES);
 DisplayLineSep1();
 DisplayConvertButton();
 DisplayFormEnd();

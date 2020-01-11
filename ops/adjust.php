@@ -1,11 +1,9 @@
 <?php
 include '../common/common.inc';
-
+APPLOG('ADJUST');
 
 DisplayTitle('Adjust Image');
 DisplayFormStart();
-
-$arg = 'UP_CONTRAST';
 
 DisplayRegionPicker();
 DisplayLineSep0();

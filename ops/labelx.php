@@ -13,14 +13,14 @@ $SelectedRegion = $_POST['SELECTED_REGION'];
 if (isset($font) == FALSE) $font = "Helvetica";
 if (isset($pointSize) == FALSE) $pointSize = 20;
 
-$originalFilePath = $inputFilePath = GetCurrentImagePath();
-$inputFilePath = ExtractRegionImage($inputFilePath, $SelectedRegion);
+$originalImagePath = $inputImagePath = GetCurrentImagePath();
+$inputImagePath = ExtractRegionImage($inputImagePath, $SelectedRegion);
 
 if ($position == 'Append')
 {
-    $outputFilePath = GetConversionPath();
+    $outputImagePath = GetConversionPath();
 
-    $script = "montage -background $backgroundColor -fill $labelColor -geometry +0+0 -font $font -pointsize $pointSize -label \"$label\"  \"$inputFilePath\" \"$outputFilePath\"";
+    $script = "montage -background $backgroundColor -fill $labelColor -geometry +0+0 -font $font -pointsize $pointSize -label \"$label\"  \"$inputImagePath\" \"$outputImagePath\"";
 
 }
 else
@@ -30,27 +30,29 @@ else
     ExecScript($script);
     APPLOG("XLABEL $script");
 
-    $outputFilePath = NewImagePath();
-    $script = "composite $labelPath -gravity $position $inputFilePath $outputFilePath";
+    $outputImagePath = NewImagePath();
+    $script = "composite $labelPath -gravity $position $inputImagePath $outputImagePath";
 }
 
 APPLOG("XLABEL $script");
 ExecScript($script);
-APPLOG("XLABEL FINAL $outputFilePath");
+APPLOG("XLABEL FINAL $outputImagePath");
 
 $x = $ExtractedRegionOriginX;
 $y = $ExtractedRegionOriginY;
 if ($SelectedRegion != 'ALL') 
 {
-    $regionFilePath = $outputFilePath;
-    $outputFilePath = NewImagePath();
-    $script = "composite -geometry +$x+$y $regionFilePath $originalFilePath $outputFilePath";
+    $regionImagePath = $outputImagePath;
+    $outputImagePath = NewImagePath();
+    $script = "composite -geometry +$x+$y $regionImagePath $originalImagePath $outputImagePath";
     ExecScript($script);
     APPLOG($script);
-    $LastOperation .=  " $SelectedRegion";
+    $regionName = explode('.', $SelectedRegion)[2];
+    $LastOperation .=  "  $regionName";
+
 }
 
 
-NotifyUI('LABEL',$outputFilePath,$REGIONS_PREVIOUS);
+NotifyUI('LABEL',$outputImagePath,$REGIONS_PREVIOUS);
 
 ?>
