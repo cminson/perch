@@ -458,8 +458,13 @@ global $SelectedSecondaryRegion;
 
 	print('Source Region:&nbsp;');
 	DisplaySep0();
-	print  "<select onchange=\"saveRegionSelection()\" id=\"ID_SELECTED_SECONDARY_REGION\" name=\"SELECTED_SECONDARY_REGION\">\n";
-    if (strlen($CurrentSecondaryRegions) < 2) return;
+	print("<select class=\"regionpicker\" onchange=\"saveRegionSelection()\" id=\"ID_SELECTED_SECONDARY_REGION\" name=\"SELECTED_SECONDARY_REGION\">\n");
+    if (strlen($CurrentSecondaryRegions) < 2) 
+    {
+	    print("<option value=\"NA\" selected>(None: No Image Loaded)\n");
+	    print("</select>\n");
+        return;
+    }
 
     if ($SelectedSecondaryRegion == "ALL")
 	    print  "<option value=\"ALL\" selected>Entire Image\n";
@@ -1377,6 +1382,42 @@ global $BASE_URL;
     print  "<img width=\"16\" src=\"$BASE_URL/wimages/colors/blue.png\">\n";
 
 	print  "</center>\n";
+}
+
+function DisplaySecondaryImageLoadForm()
+{
+    print("<iframe id=\"upload_target\" name=\"upload_target\" src=\"#\" style=\"width:0;height:0px;border:1px solid #fff; display: none\"></iframe>\n\n");
+
+    print("<form enctype=\"multipart/form-data\" id=\"ID_LOAD_SECONDARY_IMAGE\" action=\"./ops/loadsecondaryimagex.php\" method=\"post\" target=\"upload_target\">\n");
+    print("<input type=hidden name=\"MAX_FILE_SIZE\" value=\"8000000\">\n");
+    print("<div style=\"height:0px;overflow:hidden\">\n");
+    print("<input onchange=\"submitSecondaryImage();\" size=\"90\" maxLength=\"200\" type=\"FILE\" id=\"SUBMITIMAGE\" name=\"FILENAME\">\n");
+    print("</div>\n");
+    print("</form>\n");
+}
+
+
+function DisplaySecondaryImagePicker()
+{
+    global $CurrentSecondaryImage;
+    global $BASE_URL;
+
+    if ($CurrentSecondaryImage == '')
+    {
+        $imageURL = "$BASE_URL/resources/banners/banner01.jpg";
+    }
+    else
+    {
+        $imageURL = GetConversionURL($CurrentSecondaryImage);
+    }
+    APPLOG("DisplaySecondaryImagePicker: $imageURL");
+
+	print("<center>");
+    DisplayHiddenField('ID_CURRENT_SECONDARY_IMAGE', 'CURRENT_SECONDARY_IMAGE');
+    print("<img onclick=\"chooseSecondaryImage()\" style=\"border:1px solid black\" src=\"$imageURL\" width=\"80\"  id=\"ID_SECONDARY_IMAGE\" name=\"SECONDARY_IMAGE\"alt=\"\">\n");
+    print("<br>\n");
+    print("<button class=\"secondaryload\" type=\"button\" onclick=\"chooseSecondaryImage()\")>load 2nd image</button>\n");
+	print("</center>");
 }
 
 

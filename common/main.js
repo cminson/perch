@@ -10,7 +10,8 @@
 // URL and directory roots
 //
 const BASE_URL = "http://54.71.108.91";   // root. also set in common.inc
-const CONVERSIONS_PATH = "/var/www/perch/CONVERSIONS/"; // where images are stored
+//const CONVERSIONS_PATH = "/var/www/perch/CONVERSIONS/"; // where images are stored
+const CONVERSIONS_PATH = "/CONVERSIONS/"; // where images are stored
 
 // 
 // Our current session state
@@ -32,6 +33,8 @@ var BusyIcon = null;    // set to PATH_BUSY_ICON when system is busy
 const PATH_BUSY_ICON = './resources/utils/busy2.gif'; 
 
 const PATH_BANNER_ICON = './resources/banners/banner01.jpg';
+const URL_IMAGE_LOADING = BASE_URL+'/resources/utils/loading.png';
+const URL_IMAGE_ANALYZING = BASE_URL+'/resources/utils/analyzing.png';
 
 var HelpPageDisplayed = false;
 var ViewROIS = true;
@@ -262,8 +265,7 @@ function displayOp(op)
                 SELECTED_SETTING: SelectedSetting,
                 CURRENT_SECONDARY_IMAGE: CurrentSecondaryImage,
                 CURRENT_SECONDARY_REGIONS: CurrentSecondaryRegions,
-                SELECTED_SECONDARY_REGION: SelectedSecondaryRegion,
-                HOME_IMAGE: homeImageURL
+                SELECTED_SECONDARY_REGION: SelectedSecondaryRegion
             },
             function(data, status) 
             {
@@ -545,6 +547,7 @@ function viewCurrentImage()
 	var imagePath = getCurrentImagePath();
     if (imagePath != null) 
     {
+        console.log('viewCurrentImage'. imagePath);
 	    document.getElementById('ID_VIEW_IMAGE').href = BASE_URL+"/displayimage.html?CURRENTIMAGE="+imagePath;
     }
 }
@@ -908,6 +911,7 @@ function chooseSecondaryImage()
 
 function submitSecondaryImage() 
 {
+    document.getElementById('ID_SECONDARY_IMAGE').src = URL_IMAGE_LOADING;
     //CJM DEV - this is where busy image goes
     /*
     var imageURL = document.getElementById('ID_SECONDARY_IMAGE').src;
@@ -924,15 +928,14 @@ function completeSecondaryImageLoad(imageURL, text, width, height)
 {
     console.log('completeSecondaryImageLoad:', imageURL);
 
-    var imageArray = imageURL.split("/");
-	imagePath =  CONVERSIONS_PATH+imageArray[imageArray.length - 1];
-    CurrentSecondaryImage = imagePath;
+    CurrentSecondaryImage = getPathFromURL(imageURL);
+    document.getElementById('ID_SECONDARY_IMAGE').src = URL_IMAGE_ANALYZING;
 
     // Now execute segment analysis
     var op = './ops/segmentx.php';
     $.post(ENDPOINT_SEGMENT, 
         {
-            CURRENT_IMAGE: imagePath 
+            CURRENT_IMAGE: CurrentSecondaryImage 
         },
         function(regions, status) 
         {
@@ -943,13 +946,19 @@ function completeSecondaryImageLoad(imageURL, text, width, height)
             var regionAttributes = '';
             var regionCount = 0;
 
-            var regionCount = 0;
             var regionSelector = document.getElementById('ID_SELECTED_SECONDARY_REGION')
+
+            // clear all previous options, if any.  
+            for (i = regionSelector.options.length - 1 ; i >= 0 ; i--)
+            {
+                regionSelector.remove(i);
+            }
+
+            // add in new options, if any
             var el = document.createElement("option");
             el.textContent = 'Entire Image';
             el.value = 'ALL';
             regionSelector.appendChild(el);
-
 
             for (i = 0; i < regionList.length; i++) {
                 var region = regionList[i];
@@ -981,7 +990,6 @@ function completeSecondaryImageLoad(imageURL, text, width, height)
                 el.value = region;
                 regionSelector.appendChild(el);
 
-                var imagePath = getPathFromURL(imageURL);
 
             }
             document.getElementById('ID_SECONDARY_IMAGE').src = imageURL;

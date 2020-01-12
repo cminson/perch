@@ -82,6 +82,8 @@ if __name__ == '__main__':
         print('ERROR', end='')
         exit()
 
+    person_bitmap = None
+
     inputFilePath = sys.argv[1]
     file_name =  os.path.basename(inputFilePath).split('.')[0]
     #print(file_name)
@@ -119,6 +121,7 @@ if __name__ == '__main__':
     rois = result['rois']
 
     regionFileList = []
+    person_bitmaps = []
     for index, class_id in enumerate(class_ids):
 
         object_name = COCO_CLASS_NAMES[class_id].replace(' ', '_')
@@ -148,8 +151,7 @@ if __name__ == '__main__':
         regionFileList.append(outputFilePath)
 
         if object_name == 'person':
-            print('person bitmap seen')
-            person_bitmap = bitmap
+            person_bitmaps.append(bitmap)
 
 
     computeBackgroundRegion(file_name, regionFileList)
@@ -166,32 +168,64 @@ eyeCascade = cv2.CascadeClassifier(eyePath)
 smileCascade = cv2.CascadeClassifier(smilePath)
 
 object_name = 'face'
-score = 99
+score = 100
 
 faces = faceCascade.detectMultiScale(
 image_input,
 scaleFactor=1.1,
 minNeighbors=5,
 flags=cv2.CASCADE_SCALE_IMAGE
+#flags=cv2.CASCADE_DO_CANNY_PRUNING 
+#flags=cv2.CASCADE_FIND_BIGGEST_OBJECT 
+#flags=cv2.CASCADE_DO_ROUGH_SEARCH 
 )
-for (x, y, w, h) in faces:
-    outputFilePath = f'../CONVERSIONS/m{file_name}.{score}.{object_name}.{x}_{y}_{w}_{h}.png'
-    print(outputFilePath)
-    bitmap = np.zeros([input_height, input_width], dtype = np.uint8)
-    #bitmap[bitmap > 0] = 255
 
-    #testing
-    """
-    x = x - 20
-    y = y - 20
-    w = w + 40
-    h = h + 40
-    """
+print(f'Face Count: {len(faces)}')
+for (x, y, w, h) in faces:
+
+    #
+    # determine the person (if any) this face is contained within
+    # the best bitmap is one that we overlap > 10%
+    best_person_bitmap = None
+    best_ratio = 0
+    for person_bitmap in person_bitmaps:
+        rows = person_bitmap.shape[0]
+        cols = person_bitmap.shape[1]
+        bitmap = np.zeros([input_height, input_width], dtype = np.uint8)
+        bitmap[y:y+h, x:x+w] = 255
+        and_bitmap = np.logical_and(person_bitmap, bitmap).astype(np.uint8)
+        unique, counts = np.unique(and_bitmap, return_counts=True)
+        bit_dict = dict(zip(unique, counts))
+
+        count_total = input_height * input_width
+        count_zeros = 0
+        count_ones = 0
+        if 0 in bit_dict: count_zeros = bit_dict[0]
+        if 1 in bit_dict: count_ones = bit_dict[1]
+
+        ratio = count_ones / count_total
+        if ratio > best_ratio:
+            best_person_bitmap = person_bitmap
+            best_ratio = ratio
+        #print(bit_dict)
+        print(ratio)
+
+
+    score -= 1
+    outputFilePath = f'../CONVERSIONS/m{file_name}.{score}.{object_name}.{x}_{y}_{w}_{h}.png'
+    bitmap = np.zeros([input_height, input_width], dtype = np.uint8)
     bitmap[y:y+h, x:x+w] = 255
-    face_bitmap = np.logical_and(person_bitmap, bitmap).astype(np.uint8)
-    face_bitmap[face_bitmap == 1] = 255
+
+    if best_person_bitmap is None:
+        face_bitmap = bitmap
+    else:
+        face_bitmap = np.logical_and(best_person_bitmap, bitmap).astype(np.uint8)
+
+
+    face_bitmap[face_bitmap > 0] = 255
     image_face = Image.fromarray(face_bitmap, 'L')
     image_face.save(outputFilePath, 'PNG')
+    print(outputFilePath)
 
 
 
